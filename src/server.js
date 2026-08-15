@@ -18,7 +18,16 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve static files with no-cache headers so Railway never serves stale files
+app.use(express.static(path.join(__dirname, 'public'), {
+  etag: false,
+  lastModified: false,
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+}));
 
 // API Routes
 app.use('/api/sessions', sessionRoutes);
@@ -46,7 +55,11 @@ app.get('/api/taxonomy', (req, res) => {
   }
 });
 
+// SPA fallback - serve index.html for all non-API routes, also with no-cache
 app.get('*', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
@@ -61,7 +74,7 @@ app.use((err, req, res, next) => {
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`=================================================`);
-    console.log(`?? Plataforma LHH Colombia ejecutándose en: http://localhost:${PORT}`);
+    console.log(`Plataforma LHH Colombia ejecutandose en: http://localhost:${PORT}`);
     console.log(`=================================================`);
   });
 }
