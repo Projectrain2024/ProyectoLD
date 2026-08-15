@@ -631,8 +631,9 @@ async function renderInstructorDashboard() {
             <p class="subtitle" style="margin-bottom: 0;">ID: <code>${state.sessionId}</code> | Datos en tiempo real</p>
           </div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn-lhh btn-lhh-outline" style="font-size: 0.8rem; padding: 0.6rem 1.2rem;" onclick="navigate('/')">← Volver al Inicio</button>
             <button class="btn-lhh btn-lhh-outline" style="font-size: 0.8rem; padding: 0.6rem 1.2rem;" onclick="copySessionLink()">🔗 Enlace Participantes</button>
-            <button class="btn-lhh btn-lhh-accent" style="font-size: 0.8rem; padding: 0.6rem 1.2rem;" onclick="closeSession()">🛑 Cerrar Sesión</button>
+            <button class="btn-lhh btn-lhh-accent" style="font-size: 0.8rem; padding: 0.6rem 1.2rem;" onclick="closeSession()">🛑 Cerrar Sesi&oacute;n</button>
             <button class="btn-lhh btn-lhh-outline" style="font-size: 0.8rem; padding: 0.6rem 1.2rem;" onclick="renderInstructorReport()">📊 Reporte Post-Evento</button>
           </div>
         </div>
@@ -829,6 +830,7 @@ async function renderInstructorReport() {
             <p class="subtitle" style="margin-bottom: 0;">Duración: <strong>${rep.duration_minutes} min</strong> | Fecha: ${new Date(rep.created_at).toLocaleDateString()}</p>
           </div>
           <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <button class="btn-lhh btn-lhh-outline" onclick="navigate('/')">← Volver al Inicio</button>
             <a class="btn-lhh btn-lhh-accent" href="/api/sessions/${state.sessionId}/export/csv" download>📥 Descargar CSV</a>
             <button class="btn-lhh btn-lhh-outline" onclick="renderInstructorDashboard()">← Volver al Monitor</button>
           </div>
