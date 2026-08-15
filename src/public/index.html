@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -417,6 +417,911 @@
     </div>
   </div>
 
-  <script src="/app.js?v=1.0.3"></script>
+  <script>
+const state = {
+  route: '/',
+  sessionId: null,
+  participant: null,
+  currentPilar: 'personal',
+  selectedDolores: {
+    personal: [],
+    equipos: [],
+    desempenio: [],
+    estrategia: []
+  },
+  taxonomy: [],
+  sseSource: null
+};
+
+const pilaresMeta = {
+  personal: {
+    nombre: 'Liderazgo Personal',
+    color: '#D4AF37',
+    bgLight: '#FBF7ED',
+    desc: 'Autorreflexión y desarrollo continuo: reconocer el propio impacto y crecer con intención.'
+  },
+  equipos: {
+    nombre: 'Liderazgo de Equipos',
+    color: '#C8467A',
+    bgLight: '#F5E8F0',
+    desc: 'Cultivar relaciones, colaboración y confianza para desbloquear el potencial del equipo.'
+  },
+  desempenio: {
+    nombre: 'Liderazgo de Desempeño',
+    color: '#E88BA0',
+    bgLight: '#F8F0F4',
+    desc: 'Convertir el esfuerzo en resultados tangibles y sostener un alto rendimiento.'
+  },
+  estrategia: {
+    nombre: 'Liderazgo Estratégico',
+    color: '#9370DB',
+    bgLight: '#F4F1FA',
+    desc: 'Anticipar el cambio y decidir con visión de largo plazo para el negocio.'
+  }
+};
+
+// ----------------------------------------
+// INIT & ROUTING
+// ----------------------------------------
+
+async function init() {
+  await fetchTaxonomy();
+  parseRoute();
+  window.addEventListener('popstate', parseRoute);
+}
+
+async function fetchTaxonomy() {
+  try {
+    const res = await fetch('/api/taxonomy');
+    const data = await res.json();
+    if (data.success) {
+      state.taxonomy = data.data;
+    }
+  } catch (e) {
+    console.error('Error fetching taxonomy:', e);
+  }
+}
+
+function parseRoute() {
+  const path = window.location.pathname;
+  if (path.startsWith('/session/')) {
+    state.sessionId = path.split('/session/')[1];
+    state.route = '/session';
+    renderParticipantFlow();
+  } else if (path.startsWith('/instructor/session/')) {
+    state.sessionId = path.split('/instructor/session/')[1];
+    state.route = '/instructor/session';
+    renderInstructorDashboard();
+  } else {
+    state.route = '/';
+    renderHome();
+  }
+}
+
+function navigate(url) {
+  window.history.pushState({}, '', url);
+  parseRoute();
+}
+
+// ----------------------------------------
+// HOME PAGE
+// ----------------------------------------
+
+function renderHome() {
+  const root = document.getElementById('app-root');
+  root.innerHTML = `
+    <div class="card-panel" style="max-width: 700px; margin: 2rem auto;">
+      <p style="font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--purple-primary); margin-bottom: 12px;">Facilitación Ejecutiva</p>
+      <h1>Plataforma de Eventos Facilitados</h1>
+      <p class="subtitle">Crea una nueva sesión en vivo para evaluar y tabular el <strong>Universo de Desafíos</strong> con empresas participantes.</p>
+      
+      <div class="form-control">
+        <label for="session-title">Nombre o Titular del Evento</label>
+        <input type="text" id="session-title" value="Círculo de Liderazgo 2026 - Diagnóstico LHH" placeholder="Ej. Mesa Redonda Ejecutiva Q3">
+      </div>
+
+      <button class="btn-lhh btn-lhh-accent" style="width: 100%; margin-top: 1rem;" onclick="createSession()">
+        🚀 Iniciar Nueva Sesión de Evento
+      </button>
+    </div>
+
+    <!-- Historial de Eventos -->
+    <div id="session-history-panel" class="card-panel" style="max-width: 700px; margin: 2rem auto; display: none;">
+      <h2 style="font-size: 1.4rem; margin-bottom: 12px;">Historial de Eventos Facilitados</h2>
+      <p class="subtitle" style="font-size: 0.85rem; margin-bottom: 20px;">Sesiones previas creadas en esta plataforma:</p>
+      <div id="session-history-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 6px;">
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Cargando historial...</p>
+      </div>
+    </div>
+
+    <div class="card-panel" style="max-width: 700px; margin: 0 auto 3rem auto;">
+      <h2>Unirse a una Sesión Existente</h2>
+      <div class="form-control">
+        <label for="join-code">Código / ID de Sesión</label>
+        <input type="text" id="join-code" placeholder="Ingrese el UUID o código de sesión">
+      </div>
+      <div style="display: flex; gap: 14px;">
+        <button class="btn-lhh btn-lhh-outline" style="flex: 1;" onclick="joinAsParticipant()">Unirme como Empresa</button>
+        <button class="btn-lhh btn-lhh-outline" style="flex: 1;" onclick="joinAsInstructor()">Panel del Facilitador</button>
+      </div>
+    </div>
+  `;
+  loadSessionHistory();
+}
+
+async function loadSessionHistory() {
+  const panel = document.getElementById('session-history-panel');
+  const list = document.getElementById('session-history-list');
+  if (!panel || !list) return;
+
+  try {
+    const res = await fetch('/api/sessions');
+    const data = await res.json();
+
+    if (data.success && data.data && data.data.length > 0) {
+      panel.style.display = 'block';
+      list.innerHTML = data.data.map(session => {
+        const isClosed = session.status === 'closed';
+        const badge = isClosed
+          ? `<span style="background: #e2e8f0; color: #475569; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; font-family: var(--font-ui);">CERRADA</span>`
+          : `<span style="background: #dcfce7; color: #15803d; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; font-family: var(--font-ui); display: inline-flex; align-items: center; gap: 5px;"><span class="live-dot" style="width: 6px; height: 6px;"></span>ABIERTA</span>`;
+
+        return `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-alt); gap: 14px;">
+            <div style="min-width: 0; flex: 1;">
+              <div style="font-weight: 700; font-size: 0.95rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; color: var(--text); font-family: var(--font-ui);">${session.title}</div>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
+                Creado: ${new Date(session.created_at).toLocaleDateString()} | 👥 ${session.participant_count} Empresas | 💾 ${session.total_votes} Dolores
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              ${badge}
+              <button class="btn-lhh btn-lhh-outline" style="padding: 5px 12px; font-size: 0.78rem;" onclick="navigate('/instructor/session/${session.id}')">Gestionar</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      panel.style.display = 'none';
+    }
+  } catch (e) {
+    console.error('Error al cargar historial de sesiones:', e);
+    panel.style.display = 'none';
+  }
+}
+
+async function createSession() {
+  const title = document.getElementById('session-title').value;
+  try {
+    const res = await fetch('/api/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title })
+    });
+    const data = await res.json();
+    if (data.success) {
+      navigate(`/instructor/session/${data.data.id}`);
+    }
+  } catch (e) {
+    alert('Error al crear la sesión: ' + e.message);
+  }
+}
+
+function joinAsParticipant() {
+  const code = document.getElementById('join-code').value.trim();
+  if (code) navigate(`/session/${code}`);
+}
+
+function joinAsInstructor() {
+  const code = document.getElementById('join-code').value.trim();
+  if (code) navigate(`/instructor/session/${code}`);
+}
+
+// ----------------------------------------
+// PARTICIPANT FLOW
+// ----------------------------------------
+
+async function renderParticipantFlow() {
+  const root = document.getElementById('app-root');
+  
+  try {
+    const res = await fetch(`/api/sessions/${state.sessionId}`);
+    const sessionData = await res.json();
+
+    if (!sessionData.success) {
+      root.innerHTML = `
+        <div class="card-panel" style="text-align: center; padding: 4rem;">
+          <h1>Sesión No Encontrada</h1>
+          <p class="subtitle">El enlace ingresado no corresponde a una sesión activa.</p>
+          <button class="btn-lhh btn-lhh-outline" onclick="navigate('/')">Ir al Inicio</button>
+        </div>
+      `;
+      return;
+    }
+
+    if (sessionData.data.status === 'closed') {
+      root.innerHTML = `
+        <div class="card-panel" style="text-align: center; padding: 4rem;">
+          <h1>Sesión Finalizada</h1>
+          <p class="subtitle">El facilitador ha cerrado esta sesión. Gracias por tu participación.</p>
+        </div>
+      `;
+      return;
+    }
+
+    if (state.participant) {
+      renderUniversoExercise();
+    } else {
+      renderRegistrationForm();
+    }
+  } catch (e) {
+    console.error('Error loading session:', e);
+  }
+}
+
+function renderRegistrationForm() {
+  const root = document.getElementById('app-root');
+  root.innerHTML = `
+    <div class="card-panel" style="max-width: 600px; margin: 2rem auto;">
+      <p style="font-size: 12px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--purple-primary); margin-bottom: 12px;">Círculo de Liderazgo 2026</p>
+      <h1>Bienvenido al Diagnóstico</h1>
+      <p class="subtitle">Registra brevemente los datos de tu organización para ingresar al <strong>Universo de Desafíos</strong>.</p>
+
+      <form onsubmit="submitRegistration(event)">
+        <div class="form-control">
+          <label for="company_name">Nombre de la Empresa *</label>
+          <input type="text" id="company_name" required placeholder="Ej. Banco Nacional / TechCorp">
+        </div>
+
+        <div class="grid-2" style="gap: 1.25rem;">
+          <div class="form-control">
+            <label for="sector">Sector Económico</label>
+            <select id="sector">
+              <option value="Tecnología">Tecnología / Software</option>
+              <option value="Financiero">Financiero / Banca</option>
+              <option value="Salud">Salud / Farmacéutica</option>
+              <option value="Manufactura">Manufactura / Industria</option>
+              <option value="Servicios">Servicios / Consultoría</option>
+              <option value="Consumo Masivo">Consumo Masivo / Retail</option>
+              <option value="Educación">Educación / Sector Público</option>
+              <option value="Otro">Otro Sector</option>
+            </select>
+          </div>
+
+          <div class="form-control">
+            <label for="employee_count">Nº Colaboradores</label>
+            <select id="employee_count">
+              <option value="1-50">1 - 50</option>
+              <option value="51-200">51 - 200</option>
+              <option value="201-500">201 - 500</option>
+              <option value="500+">Más de 500</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-control">
+          <label for="email">Correo Institucional (Opcional)</label>
+          <input type="email" id="email" placeholder="ejemplo@empresa.com">
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 2rem;">
+          <button type="submit" class="btn-lhh btn-lhh-accent" style="width: 100%;">Comenzar Ejercicio ➔</button>
+        </div>
+      </form>
+    </div>
+  `;
+}
+
+async function submitRegistration(e) {
+  e.preventDefault();
+  const payload = {
+    company_name: document.getElementById('company_name').value,
+    sector: document.getElementById('sector').value,
+    employee_count: document.getElementById('employee_count').value,
+    email: document.getElementById('email').value
+  };
+  await sendRegistration(payload);
+}
+
+
+
+async function sendRegistration(payload) {
+  try {
+    const res = await fetch(`/api/sessions/${state.sessionId}/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+      state.participant = data.data;
+      renderUniversoExercise();
+    } else {
+      alert('Error de registro: ' + data.error);
+    }
+  } catch (e) {
+    alert('Error en conexión: ' + e.message);
+  }
+}
+
+// ----------------------------------------
+// UNIVERSO DE DESAFIOS EXERCISE
+// ----------------------------------------
+
+function renderUniversoExercise() {
+  const root = document.getElementById('app-root');
+
+  const items = state.taxonomy.filter(t => t.pilar === state.currentPilar);
+  const selectedInPilar = state.selectedDolores[state.currentPilar] || [];
+  const pilaresList = ['personal', 'equipos', 'desempenio', 'estrategia'];
+  const currIndex = pilaresList.indexOf(state.currentPilar);
+  const progresoPct = ((currIndex + 1) / pilaresList.length) * 100;
+  const meta = pilaresMeta[state.currentPilar];
+
+  const pilarTabsHtml = pilaresList.map(p => {
+    const m = pilaresMeta[p];
+    const isActive = state.currentPilar === p;
+    const selCount = state.selectedDolores[p].length;
+    const borderStyle = isActive ? `3px solid ${m.color}` : '3px solid transparent';
+    const bgStyle = isActive ? m.bgLight : 'white';
+    return `
+      <button onclick="switchPilar('${p}')" style="
+        background: ${bgStyle};
+        border: ${borderStyle};
+        border-radius: 14px;
+        padding: 20px;
+        text-align: left;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      ">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+          <h3 style="font-size: 1rem; color: ${isActive ? m.color : '#2C2C2C'}; margin: 0; font-family: 'Playfair Display', serif;">${m.nombre}</h3>
+          ${selCount > 0 ? `<span style="background: ${m.color}; color: white; padding: 2px 9px; border-radius: 12px; font-size: 11px; font-weight: 700;">${selCount}</span>` : ''}
+        </div>
+        <p style="font-size: 0.8rem; color: ${isActive ? m.color : '#6B6B6B'}; line-height: 1.5; margin: 0;">${m.desc}</p>
+      </button>
+    `;
+  }).join('');
+
+  const itemsHtml = items.map(item => {
+    const isSel = selectedInPilar.includes(item.nombre);
+    const safeName = item.nombre.replace(/'/g, "\\'");
+    return `
+      <div onclick="toggleDolor('${safeName}')" style="
+        background: ${isSel ? meta.bgLight : 'white'};
+        border: 2px solid ${isSel ? meta.color : '#e8e8e8'};
+        border-radius: 12px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: ${isSel ? `0 4px 12px ${meta.color}33` : '0 1px 4px rgba(0,0,0,0.06)'};
+      ">
+        <div style="display: flex; align-items: flex-start; gap: 10px;">
+          <div style="
+            width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0; margin-top: 2px;
+            background: ${isSel ? meta.color : '#e8e8e8'};
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; color: white; font-weight: 700;
+            transition: all 0.2s ease;
+          ">${isSel ? '✓' : ''}</div>
+          <div>
+            <div style="font-size: 0.9rem; font-weight: 700; color: ${isSel ? meta.color : '#2c2c2c'}; margin-bottom: 4px; line-height: 1.3;">${item.nombre}</div>
+            <div style="font-size: 0.78rem; color: #888; line-height: 1.5;">${item.descripcion}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  root.innerHTML = `
+    <div style="text-align: center; margin-bottom: 50px;">
+      <p style="font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: #8b7a6f; margin-bottom: 12px;">Círculo de Liderazgo, 2026</p>
+      <h1 style="font-size: 3.25rem; margin-bottom: 16px;">Universo de Desafíos</h1>
+      <p class="subtitle" style="max-width: 750px; margin: 0 auto 1.5rem auto;">
+        Entender profundamente tus desafíos es el primer paso hacia soluciones transformacionales.<br>
+        Organización: <strong>${state.participant.company_name}</strong>
+      </p>
+    </div>
+
+    <div style="margin-bottom: 40px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+        <span style="font-size: 13px; font-weight: 600; color: #8b7a6f; text-transform: uppercase; letter-spacing: 1px;">Tu Journey</span>
+        <span style="font-size: 13px; font-weight: 700; color: var(--purple-primary);">${currIndex + 1} / 4</span>
+      </div>
+      <div style="background: #e8e8e8; height: 6px; border-radius: 3px; overflow: hidden;">
+        <div style="background: linear-gradient(90deg, #D4AF37, #C8467A, #E88BA0, #9370DB); height: 100%; width: ${progresoPct}%; transition: width 0.4s ease-out;"></div>
+      </div>
+    </div>
+
+    <div style="background: linear-gradient(135deg, rgba(79,24,90,0.06) 0%, rgba(147,112,219,0.04) 100%); border-left: 4px solid var(--purple-primary); border-radius: 12px; padding: 22px 28px; margin-bottom: 40px;">
+      <p style="font-size: 0.92rem; color: var(--purple-primary); margin: 0; line-height: 1.8; font-weight: 500;">
+        En esta reflexión colaborativa, buscamos comprender la realidad operacional y estratégica de tu organización. Tu perspectiva nos permite construir intervenciones sistémicas con impacto real.
+      </p>
+    </div>
+
+    <div class="grid-2" style="max-width: 920px; margin: 0 auto 44px auto;">
+      ${pilarTabsHtml}
+    </div>
+
+    <div class="card-panel" style="border-top: 4px solid ${meta.color};">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem;">
+        <div>
+          <h2>${meta.nombre}</h2>
+          <p style="font-size: 0.92rem; color: var(--text-muted); margin: 0;">Selecciona los desafíos que impactan actualmente a tu organización en esta dimensión.</p>
+        </div>
+        <span style="background: ${meta.color}; color: white; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; white-space: nowrap; margin-left: 16px;">
+          ${selectedInPilar.length} Seleccionados
+        </span>
+      </div>
+
+      <div class="grid-4" style="margin-bottom: 30px;">
+        ${itemsHtml}
+      </div>
+
+      <div style="background: #fafaf8; border: 2px dashed ${meta.color}; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 30px;">
+        <p style="font-size: 0.82rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: ${meta.color}; margin-bottom: 14px;">¿Hay un reto que no ves representado?</p>
+        <div style="display: flex; justify-content: center; gap: 10px; max-width: 550px; margin: 0 auto;">
+          <input type="text" id="customDolorInput" placeholder="Escribe el reto que identificas..." style="flex: 1; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.9rem; font-family: 'Inter', sans-serif;">
+          <button class="btn-lhh" style="background: ${meta.color}; color: white; font-size: 0.85rem; padding: 0.7rem 1.4rem; border: none;" onclick="addCustomDolor()">Agregar</button>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1.5rem;">
+        <div style="display: flex; gap: 12px;">
+          ${getPilarPrevNextButtons()}
+        </div>
+        <button class="btn-lhh btn-lhh-accent" onclick="submitVotesAndShowResults()">
+          💾 Enviar Respuestas y Ver Resultados ➔
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function switchPilar(pilar) {
+  state.currentPilar = pilar;
+  renderUniversoExercise();
+}
+
+function toggleDolor(nombre) {
+  const arr = state.selectedDolores[state.currentPilar];
+  const idx = arr.indexOf(nombre);
+  if (idx > -1) {
+    arr.splice(idx, 1);
+  } else {
+    arr.push(nombre);
+  }
+  renderUniversoExercise();
+}
+
+function addCustomDolor() {
+  const input = document.getElementById('customDolorInput');
+  if (!input || !input.value.trim()) return;
+  const customVal = input.value.trim();
+  
+  if (!state.selectedDolores[state.currentPilar].includes(customVal)) {
+    state.selectedDolores[state.currentPilar].push(customVal);
+    state.taxonomy.push({
+      id: 'c_' + Date.now(),
+      pilar: state.currentPilar,
+      nombre: customVal,
+      descripcion: 'Desafío personalizado ingresado por la organización.'
+    });
+  }
+  renderUniversoExercise();
+}
+
+function getPilarPrevNextButtons() {
+  const pilaresList = ['personal', 'equipos', 'desempenio', 'estrategia'];
+  const currIdx = pilaresList.indexOf(state.currentPilar);
+  let btns = '';
+  if (currIdx > 0) {
+    const prev = pilaresList[currIdx - 1];
+    btns += `<button class="btn-lhh btn-lhh-outline" style="font-size: 0.85rem; padding: 0.6rem 1.2rem;" onclick="switchPilar('${prev}')">← Pilar Anterior</button>`;
+  }
+  if (currIdx < pilaresList.length - 1) {
+    const next = pilaresList[currIdx + 1];
+    btns += `<button class="btn-lhh btn-lhh-outline" style="font-size: 0.85rem; padding: 0.6rem 1.2rem;" onclick="switchPilar('${next}')">Siguiente Pilar →</button>`;
+  }
+  return btns;
+}
+
+async function submitVotesAndShowResults() {
+  const votesPayload = [];
+  Object.keys(state.selectedDolores).forEach(pilar => {
+    state.selectedDolores[pilar].forEach(dolor => {
+      votesPayload.push({ pilar, dolor, count: 1 });
+    });
+  });
+
+  try {
+    const res = await fetch(`/api/sessions/${state.sessionId}/votes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        participant_id: state.participant.id,
+        votes: votesPayload
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      renderParticipantResultsScreen();
+    } else {
+      alert('Error guardando respuestas: ' + data.error);
+    }
+  } catch (e) {
+    alert('Error de conexión: ' + e.message);
+  }
+}
+
+// ----------------------------------------
+// PARTICIPANT RESULTS SCREEN
+// ----------------------------------------
+
+async function renderParticipantResultsScreen() {
+  const root = document.getElementById('app-root');
+
+  try {
+    const res = await fetch(`/api/participants/${state.participant.id}/results`);
+    const data = await res.json();
+
+    if (!data.success) {
+      alert('Error cargando resultados: ' + data.error);
+      return;
+    }
+
+    const resData = data.data;
+    const d = resData.dolores;
+
+    function makePilarBlock(arr) {
+      if (!arr || arr.length === 0) {
+        return `<p style="font-size: 0.85rem; color: rgba(255,255,255,0.5); margin: 0;">Sin dolores seleccionados.</p>`;
+      }
+      return arr.map(item => `
+        <div style="padding: 8px 12px; background: rgba(255,255,255,0.06); border-radius: 6px; font-size: 0.82rem; color: rgba(255,255,255,0.9); margin-bottom: 6px;">${item}</div>
+      `).join('');
+    }
+
+    root.innerHTML = `
+      <div id="resumenCaptura" style="background: linear-gradient(135deg, #4F185A 0%, #2a1635 100%); border-radius: 24px; padding: 60px 50px; color: white; margin-bottom: 3rem;">
+        <div style="text-align: center; margin-bottom: 50px;">
+          <p style="font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-bottom: 14px;">Tu Reflexión Ejecutiva</p>
+          <h2 style="font-size: 2.75rem; font-weight: 700; color: white; margin-bottom: 12px; font-family: 'Playfair Display', serif;">Mapa de Dolores Identificados</h2>
+          <p style="font-size: 15px; color: rgba(255,255,255,0.75); max-width: 600px; margin: 0 auto; line-height: 1.8;">
+            Síntesis consolidada de los retos seleccionados por <strong>${resData.company_name}</strong>.
+          </p>
+        </div>
+
+        <div class="grid-4" style="margin-bottom: 40px;">
+          <div style="background: rgba(255,255,255,0.08); border: 1px solid #D4AF3755; border-radius: 16px; padding: 22px;">
+            <h3 style="font-size: 0.95rem; color: #D4AF37; margin-bottom: 14px; font-weight: 700;">👤 Personal (${(d.personal || []).length})</h3>
+            ${makePilarBlock(d.personal)}
+          </div>
+          <div style="background: rgba(255,255,255,0.08); border: 1px solid #C8467A55; border-radius: 16px; padding: 22px;">
+            <h3 style="font-size: 0.95rem; color: #C8467A; margin-bottom: 14px; font-weight: 700;">👥 Equipos (${(d.equipos || []).length})</h3>
+            ${makePilarBlock(d.equipos)}
+          </div>
+          <div style="background: rgba(255,255,255,0.08); border: 1px solid #E88BA055; border-radius: 16px; padding: 22px;">
+            <h3 style="font-size: 0.95rem; color: #E88BA0; margin-bottom: 14px; font-weight: 700;">📈 Desempeño (${(d.desempenio || []).length})</h3>
+            ${makePilarBlock(d.desempenio)}
+          </div>
+          <div style="background: rgba(255,255,255,0.08); border: 1px solid #9370DB55; border-radius: 16px; padding: 22px;">
+            <h3 style="font-size: 0.95rem; color: #9370DB; margin-bottom: 14px; font-weight: 700;">🎯 Estrategia (${(d.estrategia || []).length})</h3>
+            ${makePilarBlock(d.estrategia)}
+          </div>
+        </div>
+
+        <div style="text-align: center; padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.15);">
+          <p style="font-size: 15px; font-weight: 600; color: white; margin-bottom: 8px;">Total de Dolores Mapeados: <strong>${resData.total_dolores}</strong></p>
+          <p style="font-size: 13px; color: rgba(255,255,255,0.55); font-style: italic; margin-bottom: 24px;">Toma una captura de pantalla para conservar tu mapa de retos.</p>
+          <button class="btn-lhh btn-lhh-outline" style="color: white; border-color: rgba(255,255,255,0.4);" onclick="renderUniversoExercise()">✏️ Modificar Mis Respuestas</button>
+        </div>
+      </div>
+    `;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+// ----------------------------------------
+// INSTRUCTOR DASHBOARD
+// ----------------------------------------
+
+async function renderInstructorDashboard() {
+  const root = document.getElementById('app-root');
+
+  try {
+    const res = await fetch(`/api/sessions/${state.sessionId}/snapshot`);
+    const snap = await res.json();
+
+    if (!snap.success) {
+      root.innerHTML = `<div class="card-panel"><h1>Error cargando monitor</h1></div>`;
+      return;
+    }
+
+    const data = snap.data;
+
+    root.innerHTML = `
+      <div class="card-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; flex-wrap: wrap; gap: 16px;">
+          <div>
+            <span class="live-badge"><span class="live-dot"></span> EN VIVO</span>
+            <h1 style="margin-top: 8px; font-size: 2.1rem;">Panel en Vivo: ${data.session.title}</h1>
+            <p class="subtitle" style="margin-bottom: 0;">ID: <code>${state.sessionId}</code> | Datos en tiempo real</p>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn-lhh btn-lhh-outline" style="font-size: 0.8rem; padding: 0.6rem 1.2rem;" onclick="navigate('/')">← Volver al Inicio</button>
+            <button class="btn-lhh btn-lhh-outline" style="font-size: 0.8rem; padding: 0.6rem 1.2rem;" onclick="copySessionLink()">🔗 Enlace Participantes</button>
+            <button class="btn-lhh btn-lhh-accent" style="font-size: 0.8rem; padding: 0.6rem 1.2rem;" onclick="closeSession()">🛑 Cerrar Sesi&oacute;n</button>
+            <button class="btn-lhh btn-lhh-outline" style="font-size: 0.8rem; padding: 0.6rem 1.2rem;" onclick="renderInstructorReport()">📊 Reporte Post-Evento</button>
+          </div>
+        </div>
+
+        <div style="background: linear-gradient(135deg, #4F185A 0%, #3a1248 100%); border-radius: 16px; padding: 32px; margin-bottom: 32px; color: white;">
+          <p style="font-size: 12px; color: rgba(255,255,255,0.65); margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">Dolores Totales Mapeados</p>
+          <p class="stat-num" id="dash-votes-cnt" style="color: white; font-size: 4rem; margin: 0 0 8px 0;">${data.total_votes}</p>
+          <p style="font-size: 14px; color: rgba(255,255,255,0.75); margin: 0;">de <strong id="dash-participants-cnt">${data.participant_count}</strong> empresas participantes activas</p>
+        </div>
+
+        <h2 style="margin-bottom: 1.5rem;">Conteo y Ranking por Pilar</h2>
+        <div class="grid-2" id="dash-pilares-summary" style="margin-bottom: 32px;">
+          ${renderPilaresSummaryPreDesign(data.pilares, data.total_votes)}
+        </div>
+
+        <h2 style="margin-bottom: 1rem;">Empresas Registradas</h2>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+              <tr style="background: #F8F5F2; font-size: 0.82rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
+                <th style="padding: 0.9rem 1rem; font-weight: 600;">Empresa</th>
+                <th style="padding: 0.9rem 1rem; font-weight: 600;">Sector</th>
+                <th style="padding: 0.9rem 1rem; font-weight: 600;">Colaboradores</th>
+                <th style="padding: 0.9rem 1rem; font-weight: 600;">Estado</th>
+              </tr>
+            </thead>
+            <tbody id="dash-roster-body">
+              ${renderRosterRows(data.participants)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    setupSSEStream();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function renderPilaresSummaryPreDesign(pilares, totalVotes) {
+  if (!pilares) return '';
+  const pKeys = ['personal', 'equipos', 'desempenio', 'estrategia'];
+  
+  return pKeys.map(k => {
+    const meta = pilaresMeta[k];
+    const item = pilares[k] || { total_votes: 0, top_dolores: [] };
+    const pct = totalVotes > 0 ? Math.round((item.total_votes / totalVotes) * 100) : 0;
+    const top3 = (item.top_dolores || []).slice(0, 3);
+    const topRows = top3.length === 0
+      ? `<p style="font-size: 13px; color: #bbb; margin: 0;">Sin votos aún</p>`
+      : top3.map(d => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f5f5f5;">
+          <span style="font-size: 13px; color: #555;">${d.nombre}</span>
+          <span style="background: ${meta.color}18; color: ${meta.color}; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700;">${d.count}</span>
+        </div>
+      `).join('');
+
+    return `
+      <div style="background: white; border-radius: 16px; padding: 26px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); border: 1px solid #eee; border-top: 4px solid ${meta.color};">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+          <h3 style="font-size: 15px; color: #2c2c2c; margin: 0; font-weight: 700;">${meta.nombre}</h3>
+          <span style="background: ${meta.color}; color: white; padding: 5px 13px; border-radius: 20px; font-size: 13px; font-weight: 700;">${item.total_votes}</span>
+        </div>
+        <p style="font-size: 2.6rem; color: ${meta.color}; margin: 0; font-weight: 800; line-height: 1;">${pct}%</p>
+        <p style="font-size: 12px; color: #bbb; margin: 6px 0 0 0;">del total de dolores</p>
+        <div style="background: #f0f0f0; height: 6px; border-radius: 3px; margin-top: 14px; overflow: hidden;">
+          <div style="background: ${meta.color}; height: 100%; width: ${pct}%; border-radius: 3px; transition: width 0.5s ease-out;"></div>
+        </div>
+        <div style="margin-top: 18px; padding-top: 18px; border-top: 1px solid #f0f0f0;">
+          <p style="font-size: 11px; color: #bbb; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700; margin-bottom: 10px;">Dolores principales</p>
+          ${topRows}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderRosterRows(participants) {
+  if (!participants || participants.length === 0) {
+    return `<tr><td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-muted);">Esperando que se unan participantes...</td></tr>`;
+  }
+  return participants.map(p => `
+    <tr style="border-bottom: 1px solid var(--border);">
+      <td style="padding: 0.85rem 1rem;"><strong>${p.company_name}</strong></td>
+      <td style="padding: 0.85rem 1rem;"><span style="background: #F1F5F9; padding: 3px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${p.sector || '—'}</span></td>
+      <td style="padding: 0.85rem 1rem; font-size: 0.9rem;">${p.employee_count || '—'}</td>
+      <td style="padding: 0.85rem 1rem; font-size: 0.9rem;">${p.completed ? '✅ Completado' : '⏳ En Progreso (' + (p.votes_count || 0) + ' votos)'}</td>
+    </tr>
+  `).join('');
+}
+
+// ----------------------------------------
+// SSE STREAMING
+// ----------------------------------------
+
+function setupSSEStream() {
+  if (state.sseSource) state.sseSource.close();
+
+  state.sseSource = new EventSource(`/api/sessions/${state.sessionId}/stream`);
+  
+  state.sseSource.addEventListener('snapshot', (e) => {
+    updateDashboardFromStream(JSON.parse(e.data));
+  });
+  state.sseSource.addEventListener('participant:joined', () => refreshDashboardSnapshot());
+  state.sseSource.addEventListener('vote:updated', () => refreshDashboardSnapshot());
+  state.sseSource.addEventListener('session:status', (e) => {
+    const s = JSON.parse(e.data);
+    if (s.status === 'closed') {
+      alert('La sesión ha sido cerrada.');
+      refreshDashboardSnapshot();
+    }
+  });
+}
+
+async function refreshDashboardSnapshot() {
+  try {
+    const res = await fetch(`/api/sessions/${state.sessionId}/snapshot`);
+    const snap = await res.json();
+    if (snap.success) updateDashboardFromStream(snap.data);
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function updateDashboardFromStream(data) {
+  const partCntEl = document.getElementById('dash-participants-cnt');
+  const votesCntEl = document.getElementById('dash-votes-cnt');
+  const rosterBody = document.getElementById('dash-roster-body');
+  const pilaresSummary = document.getElementById('dash-pilares-summary');
+
+  if (partCntEl) partCntEl.innerText = data.participant_count !== undefined ? data.participant_count : (data.participants_count || 0);
+  if (votesCntEl) votesCntEl.innerText = data.total_votes;
+  if (rosterBody && data.participants) rosterBody.innerHTML = renderRosterRows(data.participants);
+  if (pilaresSummary && data.pilares) pilaresSummary.innerHTML = renderPilaresSummaryPreDesign(data.pilares, data.total_votes);
+}
+
+function copySessionLink() {
+  const link = `${window.location.origin}/session/${state.sessionId}`;
+  navigator.clipboard.writeText(link).then(() => {
+    alert('Enlace copiado:\n' + link);
+  });
+}
+
+async function closeSession() {
+  if (!confirm('¿Estás seguro de que deseas cerrar esta sesión?')) return;
+  try {
+    const res = await fetch(`/api/sessions/${state.sessionId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'closed' })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert('Sesión cerrada con éxito.');
+      navigate('/');
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// ----------------------------------------
+// INSTRUCTOR REPORT
+// ----------------------------------------
+
+async function renderInstructorReport() {
+  const root = document.getElementById('app-root');
+
+  try {
+    const res = await fetch(`/api/sessions/${state.sessionId}/report`);
+    const reportRes = await res.json();
+
+    if (!reportRes.success) {
+      alert('Error: ' + reportRes.error);
+      return;
+    }
+
+    const rep = reportRes.data;
+
+    const pilarBoxes = [
+      { title: '👤 Liderazgo Personal', key: 'personal', color: '#D4AF37' },
+      { title: '👥 Liderazgo de Equipos', key: 'equipos', color: '#C8467A' },
+      { title: '📈 Liderazgo de Desempeño', key: 'desempenio', color: '#E88BA0' },
+      { title: '🎯 Liderazgo Estratégico', key: 'estrategia', color: '#9370DB' }
+    ].map(b => renderReportPilarBox(b.title, rep.pilares[b.key], b.color)).join('');
+
+    root.innerHTML = `
+      <div class="card-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; flex-wrap: wrap; gap: 16px;">
+          <div>
+            <span class="brand-tag">Reporte Consolidado Post-Evento</span>
+            <h1 style="margin-top: 8px;">${rep.title}</h1>
+            <p class="subtitle" style="margin-bottom: 0;">Duración: <strong>${rep.duration_minutes} min</strong> | Fecha: ${new Date(rep.created_at).toLocaleDateString()}</p>
+          </div>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <button class="btn-lhh btn-lhh-outline" onclick="navigate('/')">← Volver al Inicio</button>
+            <a class="btn-lhh btn-lhh-accent" href="/api/sessions/${state.sessionId}/export/csv" download>📥 Descargar CSV</a>
+            <button class="btn-lhh btn-lhh-outline" onclick="renderInstructorDashboard()">← Volver al Monitor</button>
+          </div>
+        </div>
+
+        <div class="grid-4" style="margin-bottom: 2rem;">
+          <div class="stat-kpi"><div class="stat-num">${rep.participant_count}</div><div class="stat-label">Empresas</div></div>
+          <div class="stat-kpi"><div class="stat-num">${rep.registered_count}</div><div class="stat-label">Registradas</div></div>
+          <div class="stat-kpi"><div class="stat-num">${rep.unregistered_count}</div><div class="stat-label">Sin Registro</div></div>
+          <div class="stat-kpi"><div class="stat-num">${Object.keys(rep.by_sector).length}</div><div class="stat-label">Sectores</div></div>
+        </div>
+
+        <div style="background: white; border-radius: 16px; padding: 30px; margin-bottom: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid var(--border);">
+          <h2 style="font-size: 18px; color: #2c2c2c; margin: 0 0 22px 0; font-weight: 700;">Insights del Evento</h2>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px;">
+            <div style="background: #D4AF3715; border-left: 4px solid #D4AF37; padding: 18px; border-radius: 8px;">
+              <p style="font-size: 11px; color: #999; margin: 0 0 8px 0; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Patrón Emergente</p>
+              <p style="font-size: 14px; color: #2c2c2c; margin: 0; line-height: 1.6;">${(rep.insights && rep.insights[0]) || 'Patrón identificado en base a los votos dominantes.'}</p>
+            </div>
+            <div style="background: #C8467A15; border-left: 4px solid #C8467A; padding: 18px; border-radius: 8px;">
+              <p style="font-size: 11px; color: #999; margin: 0 0 8px 0; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Conexión de Pilares</p>
+              <p style="font-size: 14px; color: #2c2c2c; margin: 0; line-height: 1.6;">${(rep.insights && rep.insights[1]) || 'Relación transversal entre desafíos organizacionales.'}</p>
+            </div>
+            <div style="background: #9370DB15; border-left: 4px solid #9370DB; padding: 18px; border-radius: 8px;">
+              <p style="font-size: 11px; color: #999; margin: 0 0 8px 0; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Tendencia de Impacto</p>
+              <p style="font-size: 14px; color: #2c2c2c; margin: 0; line-height: 1.6;">${(rep.insights && rep.insights[2]) || 'Tendencia observada para acciones de mejora continua.'}</p>
+            </div>
+          </div>
+        </div>
+
+        <h2 style="margin-bottom: 1.5rem;">Resultados Consolidados por Pilar</h2>
+        <div class="grid-2" style="margin-bottom: 2rem;">
+          ${pilarBoxes}
+        </div>
+      </div>
+    `;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function renderReportPilarBox(title, pilarData, color) {
+  if (!pilarData) return '';
+  const bars = pilarData.top_dolores.map(d => `
+    <div style="margin-bottom: 14px;">
+      <div style="display: flex; justify-content: space-between; font-size: 0.875rem; font-weight: 600; margin-bottom: 6px; color: #2c2c2c;">
+        <span>${d.nombre}</span>
+        <span style="color: ${color};">${d.count} (${d.percentage}%)</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-bar" style="width: ${d.percentage}%; background: ${color};"></div>
+      </div>
+    </div>
+  `).join('');
+
+  return `
+    <div style="background: white; padding: 1.75rem; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid #eee; border-top: 4px solid ${color};">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 style="color: var(--purple-primary); font-size: 1.05rem; margin: 0;">${title}</h3>
+        <span style="background: ${color}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 700;">${pilarData.total_votes} votos</span>
+      </div>
+      ${bars}
+    </div>
+  `;
+}
+
+// ----------------------------------------
+// BOOTSTRAP
+// ----------------------------------------
+window.onload = init;
+
+</script>
 </body>
 </html>
