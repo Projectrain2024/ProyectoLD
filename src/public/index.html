@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Círculo de Liderazgo 2026 — Plataforma LHH</title>
+  <meta name="description" content="Plataforma de diagnóstico colaborativo para el Círculo de Liderazgo 2026 de LHH Colombia. Mapea los desafíos de tu organización en tiempo real." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================
+       DESIGN TOKENS
+    ========================================= */
+    :root {
+      --purple-primary: #4F185A;
+      --purple-dark: #3a1248;
+      --gold: #D4AF37;
+      --magenta: #C8467A;
+      --rose: #E88BA0;
+      --lavender: #9370DB;
+
+      --bg: #f5f3f0;
+      --bg-alt: #fafaf8;
+      --surface: #ffffff;
+      --border: #e8e4e0;
+      --text: #1a1a1a;
+      --text-muted: #6b6b6b;
+
+      --font-heading: 'Playfair Display', Georgia, serif;
+      --font-body: 'Inter', -apple-system, sans-serif;
+      --font-ui: 'Poppins', 'Inter', sans-serif;
+
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+
+      --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 32px rgba(79,24,90,0.12);
+
+      --transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* =========================================
+       RESET & BASE
+    ========================================= */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: linear-gradient(135deg, var(--bg) 0%, var(--bg-alt) 100%);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* =========================================
+       TYPOGRAPHY
+    ========================================= */
+    h1, h2, h3, h4 {
+      font-family: var(--font-heading);
+      line-height: 1.2;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    h1 { font-size: clamp(2rem, 5vw, 3.5rem); margin-bottom: 0.5rem; }
+    h2 { font-size: clamp(1.4rem, 3vw, 2rem); margin-bottom: 0.5rem; }
+    h3 { font-size: 1.15rem; margin-bottom: 0.25rem; }
+
+    p { color: var(--text-muted); line-height: 1.7; }
+
+    code {
+      font-family: 'Courier New', monospace;
+      background: rgba(79,24,90,0.08);
+      color: var(--purple-primary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.875em;
+    }
+
+    .subtitle {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      line-height: 1.75;
+      margin-bottom: 1.5rem;
+    }
+
+    .brand-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--purple-primary);
+      background: rgba(79,24,90,0.08);
+      padding: 5px 12px;
+      border-radius: 20px;
+    }
+
+    /* =========================================
+       LAYOUT
+    ========================================= */
+    #app-root {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .grid-4 { grid-template-columns: repeat(2, 1fr); }
+      #app-root { padding: 1.5rem 1rem 3rem; }
+    }
+
+    @media (max-width: 480px) {
+      .grid-4 { grid-template-columns: 1fr; }
+    }
+
+    /* =========================================
+       CARD PANEL
+    ========================================= */
+    .card-panel {
+      background: var(--surface);
+      border-radius: var(--radius-xl);
+      padding: 2.5rem;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 640px) {
+      .card-panel { padding: 1.5rem; border-radius: var(--radius-lg); }
+    }
+
+    /* =========================================
+       BUTTONS
+    ========================================= */
+    .btn-lhh {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: var(--font-ui);
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 0.75rem 1.75rem;
+      border-radius: var(--radius-sm);
+      border: 2px solid transparent;
+      cursor: pointer;
+      text-decoration: none;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+
+    .btn-lhh-accent {
+      background: var(--purple-primary);
+      color: white;
+      border-color: var(--purple-primary);
+    }
+    .btn-lhh-accent:hover {
+      background: var(--purple-dark);
+      border-color: var(--purple-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .btn-lhh-outline {
+      background: transparent;
+      color: var(--purple-primary);
+      border-color: var(--purple-primary);
+    }
+    .btn-lhh-outline:hover {
+      background: rgba(79,24,90,0.06);
+      transform: translateY(-1px);
+    }
+
+    .btn-lhh:active { transform: translateY(0); }
+
+    /* =========================================
+       FORM CONTROLS
+    ========================================= */
+    .form-control {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-control label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+      font-family: var(--font-ui);
+    }
+
+    .form-control input,
+    .form-control select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      font-family: var(--font-body);
+      color: var(--text);
+      background: white;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-control input:focus,
+    .form-control select:focus {
+      outline: none;
+      border-color: var(--purple-primary);
+      box-shadow: 0 0 0 3px rgba(79,24,90,0.1);
+    }
+
+    .form-control select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234F185A' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 40px;
+    }
+
+    /* =========================================
+       PILAR CARD BUTTONS
+    ========================================= */
+    .pilar-card-btn {
+      background: white;
+      border: 3px solid transparent;
+      border-radius: var(--radius-md);
+      padding: 20px;
+      text-align: left;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .pilar-card-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .active-personal  { background: #FBF7ED !important; border-color: #D4AF37 !important; }
+    .active-equipos   { background: #F5E8F0 !important; border-color: #C8467A !important; }
+    .active-desempenio { background: #F8F0F4 !important; border-color: #E88BA0 !important; }
+    .active-estrategia { background: #F4F1FA !important; border-color: #9370DB !important; }
+
+    /* =========================================
+       ITEM CARDS
+    ========================================= */
+    .item-card {
+      background: white;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .item-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .item-card .item-title {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 5px;
+      line-height: 1.3;
+    }
+
+    .item-card .item-desc {
+      font-size: 0.775rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .selected-personal  { background: #FBF7ED !important; border-color: #D4AF37 !important; box-shadow: 0 4px 12px #D4AF3733 !important; }
+    .selected-equipos   { background: #F5E8F0 !important; border-color: #C8467A !important; box-shadow: 0 4px 12px #C8467A33 !important; }
+    .selected-desempenio { background: #F8F0F4 !important; border-color: #E88BA0 !important; box-shadow: 0 4px 12px #E88BA033 !important; }
+    .selected-estrategia { background: #F4F1FA !important; border-color: #9370DB !important; box-shadow: 0 4px 12px #9370DB33 !important; }
+
+    /* =========================================
+       LIVE BADGE
+    ========================================= */
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(79,24,90,0.08);
+      color: var(--purple-primary);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-family: var(--font-ui);
+    }
+
+    .live-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #2ecc71;
+      border-radius: 50%;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.85); }
+    }
+
+    /* =========================================
+       KPI STATS
+    ========================================= */
+    .stat-kpi {
+      background: white;
+      border-radius: var(--radius-md);
+      padding: 24px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      transition: var(--transition);
+    }
+
+    .stat-kpi:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .stat-num {
+      font-family: var(--font-heading);
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--purple-primary);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      font-family: var(--font-ui);
+    }
+
+    /* =========================================
+       PROGRESS BARS
+    ========================================= */
+    .progress-track {
+      background: #f0f0f0;
+      border-radius: 3px;
+      height: 8px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: var(--purple-primary);
+      border-radius: 3px;
+      transition: width 0.5s ease-out;
+    }
+
+    /* =========================================
+       TABLE
+    ========================================= */
+    table { border-collapse: collapse; width: 100%; }
+    th { font-family: var(--font-ui); }
+    td, th { vertical-align: middle; }
+    tbody tr:hover { background: rgba(79,24,90,0.02); }
+
+    /* =========================================
+       SCROLLBAR
+    ========================================= */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: #c8c0d0; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--purple-primary); }
+  </style>
+</head>
+<body>
+  <div id="app-root">
+    <div style="text-align: center; padding: 4rem 2rem; color: var(--text-muted);">
+      <p style="font-size: 1rem;">Cargando plataforma...</p>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
