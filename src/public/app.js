@@ -788,8 +788,8 @@ async function closeSession() {
     });
     const data = await res.json();
     if (data.success) {
-      alert('Sesión cerrada.');
-      renderInstructorReport();
+      alert('Sesión cerrada con éxito.');
+      navigate('/');
     }
   } catch (e) {
     alert('Error: ' + e.message);
