@@ -105,7 +105,16 @@ function renderHome() {
       </button>
     </div>
 
-    <div class="card-panel" style="max-width: 700px; margin: 0 auto;">
+    <!-- Historial de Eventos -->
+    <div id="session-history-panel" class="card-panel" style="max-width: 700px; margin: 2rem auto; display: none;">
+      <h2 style="font-size: 1.4rem; margin-bottom: 12px;">Historial de Eventos Facilitados</h2>
+      <p class="subtitle" style="font-size: 0.85rem; margin-bottom: 20px;">Sesiones previas creadas en esta plataforma:</p>
+      <div id="session-history-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 6px;">
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Cargando historial...</p>
+      </div>
+    </div>
+
+    <div class="card-panel" style="max-width: 700px; margin: 0 auto 3rem auto;">
       <h2>Unirse a una Sesión Existente</h2>
       <div class="form-control">
         <label for="join-code">Código / ID de Sesión</label>
@@ -117,6 +126,48 @@ function renderHome() {
       </div>
     </div>
   `;
+  loadSessionHistory();
+}
+
+async function loadSessionHistory() {
+  const panel = document.getElementById('session-history-panel');
+  const list = document.getElementById('session-history-list');
+  if (!panel || !list) return;
+
+  try {
+    const res = await fetch('/api/sessions');
+    const data = await res.json();
+
+    if (data.success && data.data && data.data.length > 0) {
+      panel.style.display = 'block';
+      list.innerHTML = data.data.map(session => {
+        const isClosed = session.status === 'closed';
+        const badge = isClosed
+          ? `<span style="background: #e2e8f0; color: #475569; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; font-family: var(--font-ui);">CERRADA</span>`
+          : `<span style="background: #dcfce7; color: #15803d; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; font-family: var(--font-ui); display: inline-flex; align-items: center; gap: 5px;"><span class="live-dot" style="width: 6px; height: 6px;"></span>ABIERTA</span>`;
+
+        return `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-alt); gap: 14px;">
+            <div style="min-width: 0; flex: 1;">
+              <div style="font-weight: 700; font-size: 0.95rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; color: var(--text); font-family: var(--font-ui);">${session.title}</div>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
+                Creado: ${new Date(session.created_at).toLocaleDateString()} | 👥 ${session.participant_count} Empresas | 💾 ${session.total_votes} Dolores
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              ${badge}
+              <button class="btn-lhh btn-lhh-outline" style="padding: 5px 12px; font-size: 0.78rem;" onclick="navigate('/instructor/session/${session.id}')">Gestionar</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      panel.style.display = 'none';
+    }
+  } catch (e) {
+    console.error('Error al cargar historial de sesiones:', e);
+    panel.style.display = 'none';
+  }
 }
 
 async function createSession() {

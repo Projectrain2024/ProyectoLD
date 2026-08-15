@@ -4,6 +4,33 @@ const crypto = require('crypto');
 const db = require('../db/database');
 const platformEvents = require('../services/EventEmitter');
 
+// GET /api/sessions - List all sessions with stats (for facilitator history)
+router.get('/', (req, res) => {
+  try {
+    const sessions = db.sessions.find();
+    // Sort sessions: open ones first, then by creation date descending
+    const sorted = [...sessions].sort((a, b) => {
+      if (a.status === 'open' && b.status !== 'open') return -1;
+      if (a.status !== 'open' && b.status === 'open') return 1;
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+
+    const data = sorted.map(s => {
+      const participants = db.participants.find({ session_id: s.id });
+      const votes = db.votes.find({ session_id: s.id });
+      return {
+        ...s,
+        participant_count: participants.length,
+        total_votes: votes.reduce((acc, v) => acc + (v.count || 1), 0)
+      };
+    });
+
+    res.json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // POST /api/sessions - Create a new session (R1, R2, R3)
 router.post('/', (req, res) => {
   try {
@@ -11,7 +38,7 @@ router.post('/', (req, res) => {
     const sessionId = crypto.randomUUID();
     const newSession = db.sessions.insert({
       id: sessionId,
-      title: title || 'Sesi髇 de Diagn髎tico LHH Colombia',
+      title: title || 'Sesi贸n de Diagn贸stico LHH Colombia',
       status: 'open'
     });
 
@@ -37,7 +64,7 @@ router.get('/:id', (req, res) => {
     const { id } = req.params;
     const session = db.sessions.findOne({ id });
     if (!session) {
-      return res.status(404).json({ success: false, error: 'Sesi髇 no encontrada' });
+      return res.status(404).json({ success: false, error: 'Sesi贸n no encontrada' });
     }
 
     const participants = db.participants.find({ session_id: id });
@@ -63,12 +90,12 @@ router.patch('/:id', (req, res) => {
     const { status } = req.body;
 
     if (!['open', 'closed', 'archived'].includes(status)) {
-      return res.status(400).json({ success: false, error: 'Estado inv醠ido. Debe ser: open, closed, o archived' });
+      return res.status(400).json({ success: false, error: 'Estado inv谩lido. Debe ser: open, closed, o archived' });
     }
 
     const existing = db.sessions.findOne({ id });
     if (!existing) {
-      return res.status(404).json({ success: false, error: 'Sesi髇 no encontrada' });
+      return res.status(404).json({ success: false, error: 'Sesi贸n no encontrada' });
     }
 
     const updates = { status };
