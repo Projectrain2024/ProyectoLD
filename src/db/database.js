@@ -158,6 +158,7 @@ module.exports = {
       );
       if (existing) {
         existing.count = doc.count !== undefined ? doc.count : existing.count + 1;
+        if (doc.source_pilar) existing.source_pilar = doc.source_pilar;
         existing.created_at = new Date().toISOString();
         saveStore();
         return existing;
@@ -167,6 +168,7 @@ module.exports = {
           session_id: doc.session_id,
           participant_id: doc.participant_id,
           pilar: doc.pilar,
+          source_pilar: doc.source_pilar || null,
           dolor: doc.dolor,
           count: doc.count !== undefined ? doc.count : 1,
           created_at: new Date().toISOString()
