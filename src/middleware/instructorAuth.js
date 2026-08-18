@@ -60,14 +60,14 @@ function instructorAuth(req, res, next) {
 
   if (!password) {
     if (process.env.NODE_ENV === 'production') {
-      console.error('[AUTH] ❌ FACILITATOR_PASSWORD no configurada en producción. Acceso denegado.');
+      console.error('[AUTH] FACILITATOR_PASSWORD no configurada en producción. Acceso denegado.');
       return res.status(503).json({
         success: false,
         error: 'El servidor no está configurado correctamente. Contacta al administrador.'
       });
     }
     // Solo en desarrollo local: permitir sin contraseña
-    console.warn('[AUTH] ⚠️  FACILITATOR_PASSWORD no configurada. Acceso abierto (solo modo desarrollo).');
+    console.warn('[AUTH] FACILITATOR_PASSWORD no configurada. Acceso abierto (solo modo desarrollo).');
     return next();
   }
 

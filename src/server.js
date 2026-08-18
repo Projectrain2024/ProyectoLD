@@ -38,7 +38,7 @@ app.post('/api/auth/instructor', (req, res) => {
 
   if (!facilitatorPassword) {
     if (process.env.NODE_ENV === 'production') {
-      console.error('[AUTH] ❌ FACILITATOR_PASSWORD no configurada en producción.');
+      console.error('[AUTH] FACILITATOR_PASSWORD no configurada en producción.');
       return res.status(503).json({
         success: false,
         error: 'El servidor no está configurado correctamente. Contacta al administrador.'
