@@ -19,23 +19,50 @@ router.get('/:id/stream', (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders && res.flushHeaders();
 
-  // Send initial state snapshot
+  // Send initial state snapshot (incluye pilares y emergentes para el panel en vivo)
   const sendInitialSnapshot = () => {
     const participants = db.participants.find({ session_id: sessionId });
     const votes = db.votes.find({ session_id: sessionId });
 
+    // Agregar votos por pilar y emergentes
+    const pilaresData = { personal: {}, equipos: {}, desempenio: {}, estrategia: {} };
+    const emergentesData = {};
+    votes.forEach(v => {
+      const pKey = v.pilar.toLowerCase();
+      if (pKey === 'emergente') {
+        emergentesData[v.dolor] = (emergentesData[v.dolor] || 0) + (v.count || 1);
+      } else if (pilaresData[pKey]) {
+        pilaresData[pKey][v.dolor] = (pilaresData[pKey][v.dolor] || 0) + (v.count || 1);
+      }
+    });
+
+    const pilares = {};
+    Object.keys(pilaresData).forEach(pKey => {
+      const sorted = Object.entries(pilaresData[pKey])
+        .map(([nombre, count]) => ({ nombre, count }))
+        .sort((a, b) => b.count - a.count);
+      pilares[pKey] = { total_votes: sorted.reduce((s, i) => s + i.count, 0), top_dolores: sorted };
+    });
+
+    const emergentes = Object.entries(emergentesData)
+      .map(([nombre, count]) => ({ nombre, count }))
+      .sort((a, b) => b.count - a.count);
+
     const data = {
       session,
-      participants_count: participants.length,
+      participant_count: participants.length,
       participants: participants.map(p => ({
         id: p.id,
         company_name: p.company_name,
         sector: p.sector,
         employee_count: p.employee_count,
         created_at: p.created_at,
-        votes_count: db.votes.find({ participant_id: p.id }).length
+        votes_count: db.votes.find({ participant_id: p.id }).length,
+        completed: db.votes.find({ participant_id: p.id }).length >= 4
       })),
-      total_votes: votes.reduce((acc, v) => acc + (v.count || 1), 0)
+      total_votes: votes.reduce((acc, v) => acc + (v.count || 1), 0),
+      pilares,
+      emergentes
     };
 
     res.write(`event: snapshot\ndata: ${JSON.stringify(data)}\n\n`);

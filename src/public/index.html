@@ -1425,7 +1425,8 @@ function updateDashboardFromStream(data) {
 
   const emergentesContainer = document.getElementById('dash-emergentes-container');
   const emergentesList = document.getElementById('dash-emergentes-list');
-  if (emergentesContainer && emergentesList) {
+  // Solo actualizar si el payload incluye el campo (evitar ocultar por snapshots parciales)
+  if (emergentesContainer && emergentesList && data.emergentes !== undefined) {
     if (data.emergentes && data.emergentes.length > 0) {
       emergentesContainer.style.display = 'block';
       emergentesList.innerHTML = data.emergentes.map(e => `
