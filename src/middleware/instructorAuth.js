@@ -47,16 +47,27 @@ function validateToken(token, password) {
 /**
  * Middleware Express: requiere un token válido en el header Authorization.
  * Uso: router.get('/ruta-protegida', instructorAuth, handler)
+ *
+ * Si FACILITATOR_PASSWORD no está configurada:
+ *   - En desarrollo (NODE_ENV !== 'production'): permite acceso con advertencia en consola.
+ *   - En producción: bloquea con 503 para forzar la configuración correcta.
  */
 function instructorAuth(req, res, next) {
   const authHeader = req.headers['authorization'] || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
   const password = process.env.FACILITATOR_PASSWORD;
+
   if (!password) {
-    // Si no hay contraseña configurada, loguear advertencia y permitir acceso
-    // (para no bloquear deployments que aún no configuraron la variable)
-    console.warn('[AUTH] ⚠️  FACILITATOR_PASSWORD no configurada. El panel del facilitador está abierto.');
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[AUTH] ❌ FACILITATOR_PASSWORD no configurada en producción. Acceso denegado.');
+      return res.status(503).json({
+        success: false,
+        error: 'El servidor no está configurado correctamente. Contacta al administrador.'
+      });
+    }
+    // Solo en desarrollo local: permitir sin contraseña
+    console.warn('[AUTH] ⚠️  FACILITATOR_PASSWORD no configurada. Acceso abierto (solo modo desarrollo).');
     return next();
   }
 

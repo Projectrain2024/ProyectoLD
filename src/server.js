@@ -37,8 +37,15 @@ app.post('/api/auth/instructor', (req, res) => {
   const facilitatorPassword = process.env.FACILITATOR_PASSWORD;
 
   if (!facilitatorPassword) {
-    // Sin contraseña configurada, emitir token vacío (modo abierto con advertencia)
-    return res.json({ success: true, token: 'open', warning: 'FACILITATOR_PASSWORD no configurada.' });
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[AUTH] ❌ FACILITATOR_PASSWORD no configurada en producción.');
+      return res.status(503).json({
+        success: false,
+        error: 'El servidor no está configurado correctamente. Contacta al administrador.'
+      });
+    }
+    // Solo en desarrollo local: permitir sin contraseña
+    return res.json({ success: true, token: 'open', warning: 'FACILITATOR_PASSWORD no configurada (modo desarrollo).' });
   }
 
   if (!password || password !== facilitatorPassword) {
