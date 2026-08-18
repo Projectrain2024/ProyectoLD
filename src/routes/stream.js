@@ -30,7 +30,10 @@ router.get('/:id/stream', (req, res) => {
     votes.forEach(v => {
       const pKey = v.pilar.toLowerCase();
       if (pKey === 'emergente') {
-        emergentesData[v.dolor] = (emergentesData[v.dolor] || 0) + (v.count || 1);
+        if (!emergentesData[v.dolor]) {
+          emergentesData[v.dolor] = { count: 0, source_pilar: v.source_pilar || null };
+        }
+        emergentesData[v.dolor].count += (v.count || 1);
       } else if (pilaresData[pKey]) {
         pilaresData[pKey][v.dolor] = (pilaresData[pKey][v.dolor] || 0) + (v.count || 1);
       }
@@ -45,7 +48,7 @@ router.get('/:id/stream', (req, res) => {
     });
 
     const emergentes = Object.entries(emergentesData)
-      .map(([nombre, count]) => ({ nombre, count }))
+      .map(([nombre, { count, source_pilar }]) => ({ nombre, count, source_pilar }))
       .sort((a, b) => b.count - a.count);
 
     const data = {
@@ -113,7 +116,10 @@ router.get('/:id/snapshot', instructorAuth, (req, res) => {
     votes.forEach(v => {
       const pKey = v.pilar.toLowerCase();
       if (pKey === "emergente") {
-        emergentesData[v.dolor] = (emergentesData[v.dolor] || 0) + (v.count || 1);
+        if (!emergentesData[v.dolor]) {
+          emergentesData[v.dolor] = { count: 0, source_pilar: v.source_pilar || null };
+        }
+        emergentesData[v.dolor].count += (v.count || 1);
       } else if (pilaresData[pKey]) {
         pilaresData[pKey][v.dolor] = (pilaresData[pKey][v.dolor] || 0) + (v.count || 1);
       }
@@ -132,7 +138,7 @@ router.get('/:id/snapshot', instructorAuth, (req, res) => {
     });
 
     const formattedEmergentes = Object.entries(emergentesData)
-      .map(([nombre, count]) => ({ nombre, count }))
+      .map(([nombre, { count, source_pilar }]) => ({ nombre, count, source_pilar }))
       .sort((a, b) => b.count - a.count);
 
     res.json({

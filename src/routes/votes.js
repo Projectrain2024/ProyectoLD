@@ -34,6 +34,7 @@ router.post('/:id/votes', (req, res) => {
         session_id: sessionId,
         participant_id,
         pilar: v.pilar.toLowerCase(),
+        source_pilar: v.source_pilar ? v.source_pilar.toLowerCase() : v.pilar.toLowerCase(),
         dolor: v.dolor,
         count: v.count !== undefined ? v.count : 1
       });
