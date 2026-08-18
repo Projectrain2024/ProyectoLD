@@ -275,7 +275,7 @@ function renderRegistrationForm() {
         </div>
 
         <div style="display: flex; gap: 12px; margin-top: 2rem;">
-          <button type="submit" class="btn-lhh btn-lhh-accent" style="width: 100%;">Comenzar Ejercicio ➔</button>
+          <button type="submit" class="btn-lhh btn-lhh-accent" style="width: 100%;">Comenzar Ejercicio →</button>
         </div>
       </form>
     </div>
@@ -374,7 +374,7 @@ function renderUniversoExercise() {
             display: flex; align-items: center; justify-content: center;
             font-size: 12px; color: white; font-weight: 700;
             transition: all 0.2s ease;
-          ">${isSel ? '✓' : ''}</div>
+          ">${isSel ? '&#10003;' : ''}</div>
           <div>
             <div style="font-size: 0.9rem; font-weight: 700; color: ${isSel ? meta.color : '#2c2c2c'}; margin-bottom: 4px; line-height: 1.3;">${item.nombre}</div>
             <div style="font-size: 0.78rem; color: #888; line-height: 1.5;">${item.descripcion}</div>
@@ -442,7 +442,7 @@ function renderUniversoExercise() {
           ${getPilarPrevNextButtons()}
         </div>
         <button class="btn-lhh btn-lhh-accent" onclick="submitVotesAndShowResults()">
-          Enviar Respuestas y Ver Resultados ➔
+          Enviar Respuestas y Ver Resultados →
         </button>
       </div>
     </div>
@@ -752,7 +752,7 @@ function renderRosterRows(participants) {
       <td style="padding: 0.85rem 1rem;"><strong>${p.company_name}</strong></td>
       <td style="padding: 0.85rem 1rem;"><span style="background: #F1F5F9; padding: 3px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${p.sector || '—'}</span></td>
       <td style="padding: 0.85rem 1rem; font-size: 0.9rem;">${p.employee_count || '—'}</td>
-      <td style="padding: 0.85rem 1rem; font-size: 0.9rem;">${p.completed ? '✅ Completado' : '⏳ En Progreso (' + (p.votes_count || 0) + ' votos)'}</td>
+      <td style="padding: 0.85rem 1rem; font-size: 0.9rem;">${p.completed ? 'Completado' : 'En Progreso (' + (p.votes_count || 0) + ' votos)'}</td>
     </tr>
   `).join('');
 }
