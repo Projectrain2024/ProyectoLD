@@ -45,15 +45,16 @@ const pilaresMeta = {
 // ----------------------------------------
 
 function renderEmergenteChip(e) {
-  const meta = pilaresMeta[e.source_pilar];
-  const pilarBadge = meta
-    ? `<span style="font-size: 10px; font-weight: 700; color: ${meta.color}; background: ${meta.bgLight}; padding: 2px 7px; border-radius: 10px; border: 1px solid ${meta.color}33;">${meta.nombre.replace('Liderazgo ', '')}</span>`
+  const meta = pilaresMeta[e.source_pilar] || null;
+  const dot = meta
+    ? `<span style="width: 9px; height: 9px; border-radius: 50%; background: ${meta.color}; flex-shrink: 0; display: inline-block;"></span>`
+    : '';
+  const countBadge = e.count != null
+    ? `<span style="background: var(--purple-primary); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">${e.count}</span>`
     : '';
   return `
-    <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; background: #F4F1FA; color: var(--purple-primary); border-radius: 20px; font-size: 0.88rem; font-weight: 600; border: 1px solid rgba(79,24,90,0.15);">
-      ${pilarBadge}
-      <span>${e.nombre}</span>
-      <span style="background: var(--purple-primary); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">${e.count}</span>
+    <div style="display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; background: #F4F1FA; color: var(--purple-primary); border-radius: 20px; font-size: 0.88rem; font-weight: 600; border: 1px solid rgba(79,24,90,0.15);">
+      ${dot}<span>${e.nombre}</span>${countBadge}
     </div>
   `;
 }
