@@ -1,7 +1,8 @@
-const express = require('express');
+ï»¿const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
 const platformEvents = require('../services/EventEmitter');
+const { instructorAuth } = require('../middleware/instructorAuth');
 
 // GET /api/sessions/:id/stream - SSE real-time stream endpoint (R14, R15)
 router.get('/:id/stream', (req, res) => {
@@ -9,7 +10,7 @@ router.get('/:id/stream', (req, res) => {
   const session = db.sessions.findOne({ id: sessionId });
 
   if (!session) {
-    return res.status(404).json({ success: false, error: 'Sesión no encontrada' });
+    return res.status(404).json({ success: false, error: 'Sesiï¿½n no encontrada' });
   }
 
   // Set SSE Headers
@@ -61,13 +62,13 @@ router.get('/:id/stream', (req, res) => {
   });
 });
 
-// GET /api/sessions/:id/snapshot - REST fallback for live monitor
-router.get('/:id/snapshot', (req, res) => {
+// GET /api/sessions/:id/snapshot - REST fallback for live monitor (FACILITADOR: protegido)
+router.get('/:id/snapshot', instructorAuth, (req, res) => {
   try {
     const sessionId = req.params.id;
     const session = db.sessions.findOne({ id: sessionId });
     if (!session) {
-      return res.status(404).json({ success: false, error: 'Sesión no encontrada' });
+      return res.status(404).json({ success: false, error: 'Sesiï¿½n no encontrada' });
     }
 
     const participants = db.participants.find({ session_id: sessionId });
@@ -80,10 +81,13 @@ router.get('/:id/snapshot', (req, res) => {
       desempenio: {},
       estrategia: {}
     };
+    const emergentesData = {};
 
     votes.forEach(v => {
       const pKey = v.pilar.toLowerCase();
-      if (pilaresData[pKey]) {
+      if (pKey === "emergente") {
+        emergentesData[v.dolor] = (emergentesData[v.dolor] || 0) + (v.count || 1);
+      } else if (pilaresData[pKey]) {
         pilaresData[pKey][v.dolor] = (pilaresData[pKey][v.dolor] || 0) + (v.count || 1);
       }
     });
@@ -99,6 +103,10 @@ router.get('/:id/snapshot', (req, res) => {
         top_dolores: sorted
       };
     });
+
+    const formattedEmergentes = Object.entries(emergentesData)
+      .map(([nombre, count]) => ({ nombre, count }))
+      .sort((a, b) => b.count - a.count);
 
     res.json({
       success: true,
@@ -118,6 +126,7 @@ router.get('/:id/snapshot', (req, res) => {
           };
         }),
         pilares: formattedPilares,
+        emergentes: formattedEmergentes,
         total_votes: votes.reduce((acc, v) => acc + (v.count || 1), 0),
         timestamp: new Date().toISOString()
       }

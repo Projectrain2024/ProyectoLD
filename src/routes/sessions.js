@@ -3,9 +3,10 @@ const router = express.Router();
 const crypto = require('crypto');
 const db = require('../db/database');
 const platformEvents = require('../services/EventEmitter');
+const { instructorAuth } = require('../middleware/instructorAuth');
 
-// GET /api/sessions - List all sessions with stats (for facilitator history)
-router.get('/', (req, res) => {
+// GET /api/sessions - List all sessions with stats (FACILITADOR: protegido)
+router.get('/', instructorAuth, (req, res) => {
   try {
     const sessions = db.sessions.find();
     // Sort sessions: open ones first, then by creation date descending
@@ -31,8 +32,8 @@ router.get('/', (req, res) => {
   }
 });
 
-// POST /api/sessions - Create a new session (R1, R2, R3)
-router.post('/', (req, res) => {
+// POST /api/sessions - Create a new session (FACILITADOR: protegido)
+router.post('/', instructorAuth, (req, res) => {
   try {
     const { title } = req.body;
     const sessionId = crypto.randomUUID();
@@ -83,8 +84,8 @@ router.get('/:id', (req, res) => {
   }
 });
 
-// PATCH /api/sessions/:id - Close or update session (R4, R5)
-router.patch('/:id', (req, res) => {
+// PATCH /api/sessions/:id - Close or update session (FACILITADOR: protegido)
+router.patch('/:id', instructorAuth, (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;

@@ -1,4 +1,4 @@
-const express = require('express');
+ï»¿const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
 const platformEvents = require('../services/EventEmitter');
@@ -10,11 +10,11 @@ router.post('/:id/votes', (req, res) => {
     const session = db.sessions.findOne({ id: sessionId });
 
     if (!session) {
-      return res.status(404).json({ success: false, error: 'Sesión no encontrada' });
+      return res.status(404).json({ success: false, error: 'Sesiï¿½n no encontrada' });
     }
 
     if (session.status === 'closed') {
-      return res.status(403).json({ success: false, error: 'La sesión está cerrada' });
+      return res.status(403).json({ success: false, error: 'La sesiï¿½n estï¿½ cerrada' });
     }
 
     const { participant_id, votes } = req.body; // votes: array of { pilar, dolor, count }
@@ -46,7 +46,8 @@ router.post('/:id/votes', (req, res) => {
       personal: [],
       equipos: [],
       desempenio: [],
-      estrategia: []
+      estrategia: [],
+      emergente: []
     };
     allParticipantVotes.forEach(pv => {
       const pKey = pv.pilar.toLowerCase();

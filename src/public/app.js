@@ -1,4 +1,4 @@
-const state = {
+﻿const state = {
   route: '/',
   sessionId: null,
   participant: null,
@@ -101,7 +101,7 @@ function renderHome() {
       </div>
 
       <button class="btn-lhh btn-lhh-accent" style="width: 100%; margin-top: 1rem;" onclick="createSession()">
-        🚀 Iniciar Nueva Sesión de Evento
+        Iniciar Nueva Sesión de Evento
       </button>
     </div>
 
@@ -151,7 +151,7 @@ async function loadSessionHistory() {
             <div style="min-width: 0; flex: 1;">
               <div style="font-weight: 700; font-size: 0.95rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; color: var(--text); font-family: var(--font-ui);">${session.title}</div>
               <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
-                Creado: ${new Date(session.created_at).toLocaleDateString()} | 👥 ${session.participant_count} Empresas | 💾 ${session.total_votes} Dolores
+                Creado: ${new Date(session.created_at).toLocaleDateString()} | Empresas: ${session.participant_count} | Dolores: ${session.total_votes}
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
@@ -248,13 +248,8 @@ function renderRegistrationForm() {
       <p class="subtitle">Registra brevemente los datos de tu organización para ingresar al <strong>Universo de Desafíos</strong>.</p>
 
       <form onsubmit="submitRegistration(event)">
-        <div class="form-control">
-          <label for="company_name">Nombre de la Empresa *</label>
-          <input type="text" id="company_name" required placeholder="Ej. Banco Nacional / TechCorp">
-        </div>
-
-        <div class="grid-2" style="gap: 1.25rem;">
-          <div class="form-control">
+        <div class="grid-2" style="gap: 1.25rem; margin-bottom: 1.5rem;">
+          <div class="form-control" style="margin-bottom: 0;">
             <label for="sector">Sector Económico</label>
             <select id="sector">
               <option value="Tecnología">Tecnología / Software</option>
@@ -268,7 +263,7 @@ function renderRegistrationForm() {
             </select>
           </div>
 
-          <div class="form-control">
+          <div class="form-control" style="margin-bottom: 0;">
             <label for="employee_count">Nº Colaboradores</label>
             <select id="employee_count">
               <option value="1-50">1 - 50</option>
@@ -277,11 +272,6 @@ function renderRegistrationForm() {
               <option value="500+">Más de 500</option>
             </select>
           </div>
-        </div>
-
-        <div class="form-control">
-          <label for="email">Correo Institucional (Opcional)</label>
-          <input type="email" id="email" placeholder="ejemplo@empresa.com">
         </div>
 
         <div style="display: flex; gap: 12px; margin-top: 2rem;">
@@ -295,10 +285,10 @@ function renderRegistrationForm() {
 async function submitRegistration(e) {
   e.preventDefault();
   const payload = {
-    company_name: document.getElementById('company_name').value,
+    company_name: '',
     sector: document.getElementById('sector').value,
     employee_count: document.getElementById('employee_count').value,
-    email: document.getElementById('email').value
+    email: ''
   };
   await sendRegistration(payload);
 }
@@ -452,7 +442,7 @@ function renderUniversoExercise() {
           ${getPilarPrevNextButtons()}
         </div>
         <button class="btn-lhh btn-lhh-accent" onclick="submitVotesAndShowResults()">
-          💾 Enviar Respuestas y Ver Resultados ➔
+          Enviar Respuestas y Ver Resultados ➔
         </button>
       </div>
     </div>
@@ -511,7 +501,13 @@ async function submitVotesAndShowResults() {
   const votesPayload = [];
   Object.keys(state.selectedDolores).forEach(pilar => {
     state.selectedDolores[pilar].forEach(dolor => {
-      votesPayload.push({ pilar, dolor, count: 1 });
+      const taxItem = state.taxonomy.find(t => t.nombre === dolor);
+      const isCustom = taxItem && (taxItem.id.startsWith('c_') || taxItem.isCustom);
+      votesPayload.push({
+        pilar: isCustom ? 'emergente' : pilar,
+        dolor,
+        count: 1
+      });
     });
   });
 
@@ -566,36 +562,56 @@ async function renderParticipantResultsScreen() {
     root.innerHTML = `
       <div id="resumenCaptura" style="background: linear-gradient(135deg, #4F185A 0%, #2a1635 100%); border-radius: 24px; padding: 60px 50px; color: white; margin-bottom: 3rem;">
         <div style="text-align: center; margin-bottom: 50px;">
-          <p style="font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-bottom: 14px;">Tu Reflexión Ejecutiva</p>
-          <h2 style="font-size: 2.75rem; font-weight: 700; color: white; margin-bottom: 12px; font-family: 'Playfair Display', serif;">Mapa de Dolores Identificados</h2>
-          <p style="font-size: 15px; color: rgba(255,255,255,0.75); max-width: 600px; margin: 0 auto; line-height: 1.8;">
-            Síntesis consolidada de los retos seleccionados por <strong>${resData.company_name}</strong>.
+          <div style="font-size: 2.8rem; font-weight: 800; letter-spacing: 1px; color: white; margin-bottom: 1.25rem; font-family: 'Inter', sans-serif;">LHH</div>
+          <p style="font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-bottom: 12px;">TU REFLEXIÓN EJECUTIVA</p>
+          <h2 style="font-size: 2.8rem; font-weight: 700; color: white; margin-bottom: 16px; font-family: 'Playfair Display', serif; line-height: 1.2;">Mapa de Dolores Identificados</h2>
+          <p style="font-size: 14px; color: rgba(255,255,255,0.85); max-width: 650px; margin: 0 auto 12px auto; line-height: 1.6;">
+            Síntesis de los retos que tu organización enfrenta hoy (dolores que representan un obstáculo).
+          </p>
+          <p style="font-size: 13px; color: rgba(255,255,255,0.6); max-width: 650px; margin: 0 auto; line-height: 1.5; font-style: italic;">
+            Usa esta reflexión como punto de partida para tomar acción en nuestra próxima conversación.
           </p>
         </div>
 
         <div class="grid-4" style="margin-bottom: 40px;">
           <div style="background: rgba(255,255,255,0.08); border: 1px solid #D4AF3755; border-radius: 16px; padding: 22px;">
-            <h3 style="font-size: 0.95rem; color: #D4AF37; margin-bottom: 14px; font-weight: 700;">👤 Personal (${(d.personal || []).length})</h3>
+            <h3 style="font-size: 0.95rem; color: #D4AF37; margin-bottom: 14px; font-weight: 700;">Personal (${(d.personal || []).length})</h3>
             ${makePilarBlock(d.personal)}
           </div>
           <div style="background: rgba(255,255,255,0.08); border: 1px solid #C8467A55; border-radius: 16px; padding: 22px;">
-            <h3 style="font-size: 0.95rem; color: #C8467A; margin-bottom: 14px; font-weight: 700;">👥 Equipos (${(d.equipos || []).length})</h3>
+            <h3 style="font-size: 0.95rem; color: #C8467A; margin-bottom: 14px; font-weight: 700;">Equipos (${(d.equipos || []).length})</h3>
             ${makePilarBlock(d.equipos)}
           </div>
           <div style="background: rgba(255,255,255,0.08); border: 1px solid #E88BA055; border-radius: 16px; padding: 22px;">
-            <h3 style="font-size: 0.95rem; color: #E88BA0; margin-bottom: 14px; font-weight: 700;">📈 Desempeño (${(d.desempenio || []).length})</h3>
+            <h3 style="font-size: 0.95rem; color: #E88BA0; margin-bottom: 14px; font-weight: 700;">Desempeño (${(d.desempenio || []).length})</h3>
             ${makePilarBlock(d.desempenio)}
           </div>
           <div style="background: rgba(255,255,255,0.08); border: 1px solid #9370DB55; border-radius: 16px; padding: 22px;">
-            <h3 style="font-size: 0.95rem; color: #9370DB; margin-bottom: 14px; font-weight: 700;">🎯 Estrategia (${(d.estrategia || []).length})</h3>
+            <h3 style="font-size: 0.95rem; color: #9370DB; margin-bottom: 14px; font-weight: 700;">Estrategia (${(d.estrategia || []).length})</h3>
             ${makePilarBlock(d.estrategia)}
           </div>
         </div>
 
+        ${(d.emergente && d.emergente.length > 0) ? `
+          <div style="background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,255,255,0.2); border-radius: 16px; padding: 24px; margin-bottom: 40px; text-align: left;">
+            <h3 style="font-size: 1.1rem; color: #FFF; margin-top: 0; margin-bottom: 10px; font-weight: 700; font-family: 'Playfair Display', serif; display: flex; align-items: center; gap: 8px;">
+              Patrones Emergentes
+            </h3>
+            <p style="font-size: 0.82rem; color: rgba(255,255,255,0.7); margin-top: 0; margin-bottom: 18px; line-height: 1.5;">
+              Retos específicos adicionales que propusiste durante el ejercicio:
+            </p>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+              ${d.emergente.map(item => `
+                <div style="padding: 6px 14px; background: rgba(255,255,255,0.1); border-radius: 20px; font-size: 0.82rem; color: white; border: 1px solid rgba(255,255,255,0.15);">${item}</div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
         <div style="text-align: center; padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.15);">
           <p style="font-size: 15px; font-weight: 600; color: white; margin-bottom: 8px;">Total de Dolores Mapeados: <strong>${resData.total_dolores}</strong></p>
           <p style="font-size: 13px; color: rgba(255,255,255,0.55); font-style: italic; margin-bottom: 24px;">Toma una captura de pantalla para conservar tu mapa de retos.</p>
-          <button class="btn-lhh btn-lhh-outline" style="color: white; border-color: rgba(255,255,255,0.4);" onclick="renderUniversoExercise()">✏️ Modificar Mis Respuestas</button>
+          <button class="btn-lhh btn-lhh-outline" style="color: white; border-color: rgba(255,255,255,0.4);" onclick="renderUniversoExercise()">Modificar Mis Respuestas</button>
         </div>
       </div>
     `;
@@ -632,9 +648,9 @@ async function renderInstructorDashboard() {
           </div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <button class="btn-lhh btn-lhh-outline" style="font-size: 0.8rem; padding: 0.6rem 1.2rem;" onclick="navigate('/')">← Volver al Inicio</button>
-            <button class="btn-lhh btn-lhh-outline" style="font-size: 0.8rem; padding: 0.6rem 1.2rem;" onclick="copySessionLink()">🔗 Enlace Participantes</button>
-            <button class="btn-lhh btn-lhh-accent" style="font-size: 0.8rem; padding: 0.6rem 1.2rem;" onclick="closeSession()">🛑 Cerrar Sesi&oacute;n</button>
-            <button class="btn-lhh btn-lhh-outline" style="font-size: 0.8rem; padding: 0.6rem 1.2rem;" onclick="renderInstructorReport()">📊 Reporte Post-Evento</button>
+            <button class="btn-lhh btn-lhh-outline" style="font-size: 0.8rem; padding: 0.6rem 1.2rem;" onclick="copySessionLink()">Enlace Participantes</button>
+            <button class="btn-lhh btn-lhh-accent" style="font-size: 0.8rem; padding: 0.6rem 1.2rem;" onclick="closeSession()">Cerrar Sesi&oacute;n</button>
+            <button class="btn-lhh btn-lhh-outline" style="font-size: 0.8rem; padding: 0.6rem 1.2rem;" onclick="renderInstructorReport()">Reporte Post-Evento</button>
           </div>
         </div>
 
@@ -647,6 +663,21 @@ async function renderInstructorDashboard() {
         <h2 style="margin-bottom: 1.5rem;">Conteo y Ranking por Pilar</h2>
         <div class="grid-2" id="dash-pilares-summary" style="margin-bottom: 32px;">
           ${renderPilaresSummaryPreDesign(data.pilares, data.total_votes)}
+        </div>
+
+        <div id="dash-emergentes-container" style="${(!data.emergentes || data.emergentes.length === 0) ? 'display: none;' : ''} margin-bottom: 32px;">
+          <h2 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">Patrones Emergentes (Retos Propuestos)</h2>
+          <div style="background: white; border-radius: 16px; padding: 26px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); border: 1px solid #eee; border-top: 4px solid var(--purple-primary);">
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0; margin-bottom: 20px;">Retos específicos ingresados por los participantes en el campo abierto.</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;" id="dash-emergentes-list">
+              ${(data.emergentes || []).map(e => `
+                <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: #F4F1FA; color: var(--purple-primary); border-radius: 20px; font-size: 0.88rem; font-weight: 600; border: 1px solid rgba(79,24,90,0.15);">
+                  <span>${e.nombre}</span>
+                  <span style="background: var(--purple-primary); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">${e.count}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
         </div>
 
         <h2 style="margin-bottom: 1rem;">Empresas Registradas</h2>
@@ -769,6 +800,22 @@ function updateDashboardFromStream(data) {
   if (votesCntEl) votesCntEl.innerText = data.total_votes;
   if (rosterBody && data.participants) rosterBody.innerHTML = renderRosterRows(data.participants);
   if (pilaresSummary && data.pilares) pilaresSummary.innerHTML = renderPilaresSummaryPreDesign(data.pilares, data.total_votes);
+
+  const emergentesContainer = document.getElementById('dash-emergentes-container');
+  const emergentesList = document.getElementById('dash-emergentes-list');
+  if (emergentesContainer && emergentesList) {
+    if (data.emergentes && data.emergentes.length > 0) {
+      emergentesContainer.style.display = 'block';
+      emergentesList.innerHTML = data.emergentes.map(e => `
+        <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: #F4F1FA; color: var(--purple-primary); border-radius: 20px; font-size: 0.88rem; font-weight: 600; border: 1px solid rgba(79,24,90,0.15);">
+          <span>${e.nombre}</span>
+          <span style="background: var(--purple-primary); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">${e.count}</span>
+        </div>
+      `).join('');
+    } else {
+      emergentesContainer.style.display = 'none';
+    }
+  }
 }
 
 function copySessionLink() {
@@ -815,10 +862,10 @@ async function renderInstructorReport() {
     const rep = reportRes.data;
 
     const pilarBoxes = [
-      { title: '👤 Liderazgo Personal', key: 'personal', color: '#D4AF37' },
-      { title: '👥 Liderazgo de Equipos', key: 'equipos', color: '#C8467A' },
-      { title: '📈 Liderazgo de Desempeño', key: 'desempenio', color: '#E88BA0' },
-      { title: '🎯 Liderazgo Estratégico', key: 'estrategia', color: '#9370DB' }
+      { title: 'Liderazgo Personal', key: 'personal', color: '#D4AF37' },
+      { title: 'Liderazgo de Equipos', key: 'equipos', color: '#C8467A' },
+      { title: 'Liderazgo de Desempeño', key: 'desempenio', color: '#E88BA0' },
+      { title: 'Liderazgo Estratégico', key: 'estrategia', color: '#9370DB' }
     ].map(b => renderReportPilarBox(b.title, rep.pilares[b.key], b.color)).join('');
 
     root.innerHTML = `
@@ -831,7 +878,7 @@ async function renderInstructorReport() {
           </div>
           <div style="display: flex; gap: 12px; flex-wrap: wrap;">
             <button class="btn-lhh btn-lhh-outline" onclick="navigate('/')">← Volver al Inicio</button>
-            <a class="btn-lhh btn-lhh-accent" href="/api/sessions/${state.sessionId}/export/csv" download>📥 Descargar CSV</a>
+            <a class="btn-lhh btn-lhh-accent" href="/api/sessions/${state.sessionId}/export/csv" download>Descargar CSV</a>
             <button class="btn-lhh btn-lhh-outline" onclick="renderInstructorDashboard()">← Volver al Monitor</button>
           </div>
         </div>
@@ -865,6 +912,21 @@ async function renderInstructorReport() {
         <div class="grid-2" style="margin-bottom: 2rem;">
           ${pilarBoxes}
         </div>
+
+        ${(rep.emergentes && rep.emergentes.total_votes > 0) ? `
+          <h2 style="margin-bottom: 1.5rem;">Patrones Emergentes</h2>
+          <div style="background: white; border-radius: 16px; padding: 26px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); border: 1px solid #eee; border-top: 4px solid var(--purple-primary); margin-bottom: 2rem;">
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0; margin-bottom: 20px;">Retos específicos adicionales ingresados por los participantes durante el diagnóstico.</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+              ${(rep.emergentes.top_dolores || []).map(e => `
+                <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: #F4F1FA; color: var(--purple-primary); border-radius: 20px; font-size: 0.88rem; font-weight: 600; border: 1px solid rgba(79,24,90,0.15);">
+                  <span>${e.nombre}</span>
+                  <span style="background: var(--purple-primary); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">${e.count}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
       </div>
     `;
   } catch (e) {

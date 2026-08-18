@@ -4,6 +4,7 @@ const path = require('path');
 require('dotenv').config();
 
 const db = require('./db/database');
+const { instructorAuth, generateToken } = require('./middleware/instructorAuth');
 const sessionRoutes = require('./routes/sessions');
 const participantRoutes = require('./routes/participants');
 const voteRoutes = require('./routes/votes');
@@ -29,7 +30,28 @@ app.use(express.static(path.join(__dirname, 'public'), {
   }
 }));
 
-// API Routes
+// ── Auth endpoint ────────────────────────────────────────────────────────────
+// POST /api/auth/instructor  →  valida la contraseña y retorna un token firmado
+app.post('/api/auth/instructor', (req, res) => {
+  const { password } = req.body;
+  const facilitatorPassword = process.env.FACILITATOR_PASSWORD;
+
+  if (!facilitatorPassword) {
+    // Sin contraseña configurada, emitir token vacío (modo abierto con advertencia)
+    return res.json({ success: true, token: 'open', warning: 'FACILITATOR_PASSWORD no configurada.' });
+  }
+
+  if (!password || password !== facilitatorPassword) {
+    return res.status(401).json({ success: false, error: 'Contraseña incorrecta.' });
+  }
+
+  const token = generateToken(facilitatorPassword);
+  res.json({ success: true, token });
+});
+
+// ── API Routes ────────────────────────────────────────────────────────────────
+// La autenticación se aplica por-ruta dentro de cada router (ver cada routes/*.js).
+// Rutas públicas y protegidas coexisten en los mismos routers.
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/sessions', participantRoutes);
 app.use('/api/participants', participantRoutes);

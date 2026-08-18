@@ -1,4 +1,4 @@
-const express = require('express');
+ï»¿const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
 
@@ -19,7 +19,8 @@ router.get('/:id/results', (req, res) => {
       personal: [],
       equipos: [],
       desempenio: [],
-      estrategia: []
+      estrategia: [],
+      emergente: []
     };
 
     if (cachedResult) {
@@ -27,6 +28,9 @@ router.get('/:id/results', (req, res) => {
         dolores = typeof cachedResult.dolores_json === 'string'
           ? JSON.parse(cachedResult.dolores_json)
           : cachedResult.dolores_json;
+        if (!dolores.emergente) {
+          dolores.emergente = [];
+        }
       } catch (e) {
         console.error('Error parsing cached results JSON:', e);
       }
@@ -49,7 +53,7 @@ router.get('/:id/results', (req, res) => {
         participant_id: participantId,
         company_name: participant.company_name,
         sector: participant.sector,
-        session_title: session ? session.title : 'Sesión LHH',
+        session_title: session ? session.title : 'Sesiï¿½n LHH',
         dolores,
         total_dolores: totalSelected,
         generated_at: new Date().toISOString()

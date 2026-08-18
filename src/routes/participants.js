@@ -1,4 +1,4 @@
-const express = require('express');
+ï»¿const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 const db = require('../db/database');
@@ -11,11 +11,11 @@ router.post('/:id/register', (req, res) => {
     const session = db.sessions.findOne({ id: sessionId });
 
     if (!session) {
-      return res.status(404).json({ success: false, error: 'La sesión no existe' });
+      return res.status(404).json({ success: false, error: 'La sesiï¿½n no existe' });
     }
 
     if (session.status === 'closed') {
-      return res.status(403).json({ success: false, error: 'Esta sesión se encuentra cerrada' });
+      return res.status(403).json({ success: false, error: 'Esta sesiï¿½n se encuentra cerrada' });
     }
 
     const { company_name, sector, employee_count, email, is_anonymous } = req.body;
@@ -26,9 +26,9 @@ router.post('/:id/register', (req, res) => {
     const newParticipant = db.participants.insert({
       id: participantId,
       session_id: sessionId,
-      company_name: isAnon ? 'Empresa Anónima' : company_name.trim(),
-      sector: isAnon ? 'Sin especificar' : (sector || 'Otro'),
-      employee_count: isAnon ? 'Sin especificar' : (employee_count || '1-50'),
+      company_name: isAnon ? "Empresa AnÃ³nima" : company_name.trim(),
+      sector: sector || "Otro",
+      employee_count: employee_count || "1-50",
       email: email ? email.trim() : null
     });
 

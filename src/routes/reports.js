@@ -2,9 +2,10 @@
 const router = express.Router();
 const db = require('../db/database');
 const { createObjectCsvStringifier } = require('csv-writer');
+const { instructorAuth } = require('../middleware/instructorAuth');
 
-// GET /api/sessions/:id/report - Consolidated post-session report JSON (R17, R18)
-router.get('/:id/report', (req, res) => {
+// GET /api/sessions/:id/report - Consolidated post-session report JSON (FACILITADOR: protegido)
+router.get('/:id/report', instructorAuth, (req, res) => {
   try {
     const sessionId = req.params.id;
     const session = db.sessions.findOne({ id: sessionId });
@@ -33,10 +34,14 @@ router.get('/:id/report', (req, res) => {
       desempenio: { total_votes: 0, top_dolores: [], by_dolor: {} },
       estrategia: { total_votes: 0, top_dolores: [], by_dolor: {} }
     };
+    const emergentes = { total_votes: 0, top_dolores: [], by_dolor: {} };
 
     votes.forEach(v => {
       const pKey = v.pilar.toLowerCase();
-      if (pilares[pKey]) {
+      if (pKey === "emergente") {
+        emergentes.total_votes += (v.count || 1);
+        emergentes.by_dolor[v.dolor] = (emergentes.by_dolor[v.dolor] || 0) + (v.count || 1);
+      } else if (pilares[pKey]) {
         pilares[pKey].total_votes += (v.count || 1);
         pilares[pKey].by_dolor[v.dolor] = (pilares[pKey].by_dolor[v.dolor] || 0) + (v.count || 1);
       }
@@ -54,6 +59,15 @@ router.get('/:id/report', (req, res) => {
 
       pilares[pKey].top_dolores = sorted;
     });
+
+    const empTotal = emergentes.total_votes;
+    emergentes.top_dolores = Object.entries(emergentes.by_dolor)
+      .map(([nombre, count]) => ({
+        nombre,
+        count,
+        percentage: empTotal > 0 ? Number(((count / empTotal) * 100).toFixed(1)) : 0
+      }))
+      .sort((a, b) => b.count - a.count);
 
     const insights = [];
     Object.keys(pilares).forEach(pKey => {
@@ -82,6 +96,7 @@ router.get('/:id/report', (req, res) => {
         by_sector: bySector,
         by_size: bySize,
         pilares,
+        emergentes,
         insights,
         generated_at: new Date().toISOString()
       }
@@ -91,8 +106,8 @@ router.get('/:id/report', (req, res) => {
   }
 });
 
-// GET /api/sessions/:id/export/csv - Download raw votes CSV (R19)
-router.get('/:id/export/csv', (req, res) => {
+// GET /api/sessions/:id/export/csv - Download raw votes CSV (FACILITADOR: protegido)
+router.get('/:id/export/csv', instructorAuth, (req, res) => {
   try {
     const sessionId = req.params.id;
     const session = db.sessions.findOne({ id: sessionId });
