@@ -1206,9 +1206,10 @@ async function renderParticipantResultsScreen() {
               Retos específicos adicionales que propusiste durante el ejercicio:
             </p>
             <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-              ${d.emergente.map(item => `
-                <div style="padding: 6px 14px; background: rgba(255,255,255,0.1); border-radius: 20px; font-size: 0.82rem; color: white; border: 1px solid rgba(255,255,255,0.15);">${item}</div>
-              `).join('')}
+              ${d.emergente.map(item => {
+                const e = typeof item === 'string' ? { nombre: item, source_pilar: null } : item;
+                return renderEmergenteChip(e);
+              }).join('')}
             </div>
           </div>
         ` : ''}

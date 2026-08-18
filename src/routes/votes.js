@@ -52,7 +52,9 @@ router.post('/:id/votes', (req, res) => {
     };
     allParticipantVotes.forEach(pv => {
       const pKey = pv.pilar.toLowerCase();
-      if (categorized[pKey]) {
+      if (pKey === 'emergente') {
+        categorized.emergente.push({ nombre: pv.dolor, source_pilar: pv.source_pilar || null });
+      } else if (categorized[pKey]) {
         categorized[pKey].push(pv.dolor);
       }
     });
