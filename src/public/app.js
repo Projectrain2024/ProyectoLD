@@ -41,6 +41,24 @@ const pilaresMeta = {
 };
 
 // ----------------------------------------
+// HELPERS - EMERGENTES
+// ----------------------------------------
+
+function renderEmergenteChip(e) {
+  const meta = pilaresMeta[e.source_pilar];
+  const pilarBadge = meta
+    ? `<span style="font-size: 10px; font-weight: 700; color: ${meta.color}; background: ${meta.bgLight}; padding: 2px 7px; border-radius: 10px; border: 1px solid ${meta.color}33;">${meta.nombre.replace('Liderazgo ', '')}</span>`
+    : '';
+  return `
+    <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; background: #F4F1FA; color: var(--purple-primary); border-radius: 20px; font-size: 0.88rem; font-weight: 600; border: 1px solid rgba(79,24,90,0.15);">
+      ${pilarBadge}
+      <span>${e.nombre}</span>
+      <span style="background: var(--purple-primary); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">${e.count}</span>
+    </div>
+  `;
+}
+
+// ----------------------------------------
 // INIT & ROUTING
 // ----------------------------------------
 
@@ -670,12 +688,7 @@ async function renderInstructorDashboard() {
           <div style="background: white; border-radius: 16px; padding: 26px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); border: 1px solid #eee; border-top: 4px solid var(--purple-primary);">
             <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0; margin-bottom: 20px;">Retos específicos ingresados por los participantes en el campo abierto.</p>
             <div style="display: flex; flex-wrap: wrap; gap: 10px;" id="dash-emergentes-list">
-              ${(data.emergentes || []).map(e => `
-                <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: #F4F1FA; color: var(--purple-primary); border-radius: 20px; font-size: 0.88rem; font-weight: 600; border: 1px solid rgba(79,24,90,0.15);">
-                  <span>${e.nombre}</span>
-                  <span style="background: var(--purple-primary); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">${e.count}</span>
-                </div>
-              `).join('')}
+              ${(data.emergentes || []).map(e => renderEmergenteChip(e)).join('')}
             </div>
           </div>
         </div>
@@ -806,12 +819,7 @@ function updateDashboardFromStream(data) {
   if (emergentesContainer && emergentesList) {
     if (data.emergentes && data.emergentes.length > 0) {
       emergentesContainer.style.display = 'block';
-      emergentesList.innerHTML = data.emergentes.map(e => `
-        <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: #F4F1FA; color: var(--purple-primary); border-radius: 20px; font-size: 0.88rem; font-weight: 600; border: 1px solid rgba(79,24,90,0.15);">
-          <span>${e.nombre}</span>
-          <span style="background: var(--purple-primary); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">${e.count}</span>
-        </div>
-      `).join('');
+      emergentesList.innerHTML = data.emergentes.map(e => renderEmergenteChip(e)).join('');
     } else {
       emergentesContainer.style.display = 'none';
     }
