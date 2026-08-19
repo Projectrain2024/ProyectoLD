@@ -71,7 +71,12 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'Instructor-Led Event Platform (LHH Colombia)',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    env: {
+      NODE_ENV: process.env.NODE_ENV || 'undefined',
+      PASSWORD_SET: !!process.env.FACILITATOR_PASSWORD,
+      PASSWORD_LENGTH: (process.env.FACILITATOR_PASSWORD || '').length
+    }
   });
 });
 
