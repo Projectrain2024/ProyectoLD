@@ -1165,7 +1165,12 @@ async function renderParticipantResultsScreen() {
     }
 
     root.innerHTML = `
-      <div id="resumenCaptura" style="background: linear-gradient(135deg, #4F185A 0%, #2a1635 100%); border-radius: 24px; padding: 60px 50px; color: white; margin-bottom: 3rem;">
+      <div id="resumenCaptura" style="background: linear-gradient(135deg, #4F185A 0%, #2a1635 100%); border-radius: 24px; padding: 60px 50px; color: white; margin-bottom: 3rem; position: relative; overflow: hidden;">
+        <!-- Marca de agua -->
+        <div aria-hidden="true" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;">
+          <span style="font-size:22vw;font-weight:900;font-family:'Arial Black',Arial,sans-serif;color:rgba(255,255,255,0.04);letter-spacing:-4px;user-select:none;white-space:nowrap;">LHH</span>
+        </div>
+        <div style="position:relative;z-index:1;">
         <div style="text-align: center; margin-bottom: 50px;">
           <div style="font-size: 2.8rem; font-weight: 800; letter-spacing: 1px; color: white; margin-bottom: 1.25rem; font-family: 'Inter', sans-serif;">LHH</div>
           <p style="font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-bottom: 12px;">TU REFLEXIÓN EJECUTIVA</p>
@@ -1180,19 +1185,23 @@ async function renderParticipantResultsScreen() {
 
         <div class="grid-4" style="margin-bottom: 40px;">
           <div style="background: rgba(255,255,255,0.08); border: 1px solid #D4AF3755; border-radius: 16px; padding: 22px;">
-            <h3 style="font-size: 0.95rem; color: #D4AF37; margin-bottom: 14px; font-weight: 700;">Personal (${(d.personal || []).length})</h3>
+            <h3 style="font-size: 0.95rem; color: #D4AF37; margin-bottom: 4px; font-weight: 700;">Personal (${(d.personal || []).length})</h3>
+            <p style="font-size: 0.72rem; color: rgba(255,255,255,0.45); margin: 0 0 14px 0; line-height: 1.45;">Autorreflexión y desarrollo continuo: reconocer el propio impacto y crecer con intención.</p>
             ${makePilarBlock(d.personal)}
           </div>
           <div style="background: rgba(255,255,255,0.08); border: 1px solid #C8467A55; border-radius: 16px; padding: 22px;">
-            <h3 style="font-size: 0.95rem; color: #C8467A; margin-bottom: 14px; font-weight: 700;">Equipos (${(d.equipos || []).length})</h3>
+            <h3 style="font-size: 0.95rem; color: #C8467A; margin-bottom: 4px; font-weight: 700;">Equipos (${(d.equipos || []).length})</h3>
+            <p style="font-size: 0.72rem; color: rgba(255,255,255,0.45); margin: 0 0 14px 0; line-height: 1.45;">Cultivar relaciones, colaboración y confianza para desbloquear el potencial del equipo.</p>
             ${makePilarBlock(d.equipos)}
           </div>
           <div style="background: rgba(255,255,255,0.08); border: 1px solid #E88BA055; border-radius: 16px; padding: 22px;">
-            <h3 style="font-size: 0.95rem; color: #E88BA0; margin-bottom: 14px; font-weight: 700;">Desempeño (${(d.desempenio || []).length})</h3>
+            <h3 style="font-size: 0.95rem; color: #E88BA0; margin-bottom: 4px; font-weight: 700;">Desempeño (${(d.desempenio || []).length})</h3>
+            <p style="font-size: 0.72rem; color: rgba(255,255,255,0.45); margin: 0 0 14px 0; line-height: 1.45;">Convertir el esfuerzo en resultados tangibles y sostener un alto rendimiento.</p>
             ${makePilarBlock(d.desempenio)}
           </div>
           <div style="background: rgba(255,255,255,0.08); border: 1px solid #9370DB55; border-radius: 16px; padding: 22px;">
-            <h3 style="font-size: 0.95rem; color: #9370DB; margin-bottom: 14px; font-weight: 700;">Estrategia (${(d.estrategia || []).length})</h3>
+            <h3 style="font-size: 0.95rem; color: #9370DB; margin-bottom: 4px; font-weight: 700;">Estrategia (${(d.estrategia || []).length})</h3>
+            <p style="font-size: 0.72rem; color: rgba(255,255,255,0.45); margin: 0 0 14px 0; line-height: 1.45;">Anticipar el cambio y decidir con visión de largo plazo para el negocio.</p>
             ${makePilarBlock(d.estrategia)}
           </div>
         </div>
@@ -1215,6 +1224,25 @@ async function renderParticipantResultsScreen() {
           <p style="font-size: 15px; font-weight: 600; color: white; margin-bottom: 8px;">Total de Dolores Mapeados: <strong>${resData.total_dolores}</strong></p>
           <p style="font-size: 13px; color: rgba(255,255,255,0.55); font-style: italic; margin-bottom: 24px;">Toma una captura de pantalla para conservar tu mapa de retos.</p>
           <button class="btn-lhh btn-lhh-outline" style="color: white; border-color: rgba(255,255,255,0.4);" onclick="renderUniversoExercise()">Modificar Mis Respuestas</button>
+        </div>
+        </div><!-- /z-index wrapper -->
+      </div>
+
+      <!-- Definiciones de pilares -->
+      <div style="margin-bottom: 3rem;">
+        <h3 style="font-size: 1rem; font-weight: 700; color: var(--purple-primary); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 1.25rem;">Marco de Referencia</h3>
+        <div class="grid-4" style="gap: 16px;">
+          ${[
+            { color: '#D4AF37', border: '#D4AF3740', title: 'Liderazgo Personal',     desc: 'Autorreflexión y desarrollo continuo: reconocer el propio impacto y crecer con intención.' },
+            { color: '#C8467A', border: '#C8467A40', title: 'Liderazgo de Equipos',   desc: 'Cultivar relaciones, colaboración y confianza para desbloquear el potencial del equipo.' },
+            { color: '#E88BA0', border: '#E88BA040', title: 'Liderazgo de Desempeño', desc: 'Convertir el esfuerzo en resultados tangibles y sostener un alto rendimiento.' },
+            { color: '#9370DB', border: '#9370DB40', title: 'Liderazgo Estratégico',  desc: 'Anticipar el cambio y decidir con visión de largo plazo para el negocio.' }
+          ].map(p => `
+            <div style="background: white; border: 1px solid ${p.border}; border-top: 4px solid ${p.color}; border-radius: 12px; padding: 18px 20px;">
+              <p style="font-size: 0.82rem; font-weight: 700; color: ${p.color}; text-transform: uppercase; letter-spacing: 0.8px; margin: 0 0 8px 0;">${p.title}</p>
+              <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.55; margin: 0;">${p.desc}</p>
+            </div>
+          `).join('')}
         </div>
       </div>
     `;
