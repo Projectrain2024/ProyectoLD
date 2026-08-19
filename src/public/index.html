@@ -1299,21 +1299,30 @@ async function renderInstructorDashboard() {
           </div>
         </div>
 
-        <h2 style="margin-bottom: 1rem;">Empresas Registradas</h2>
-        <div style="overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse; text-align: left;">
-            <thead>
-              <tr style="background: #F8F5F2; font-size: 0.82rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
-                <th style="padding: 0.9rem 1rem; font-weight: 600;">Empresa</th>
-                <th style="padding: 0.9rem 1rem; font-weight: 600;">Sector</th>
-                <th style="padding: 0.9rem 1rem; font-weight: 600;">Colaboradores</th>
-                <th style="padding: 0.9rem 1rem; font-weight: 600;">Estado</th>
-              </tr>
-            </thead>
-            <tbody id="dash-roster-body">
-              ${renderRosterRows(data.participants)}
-            </tbody>
-          </table>
+        <div style="border: 1px solid var(--border); border-radius: 12px; overflow: hidden;">
+          <button onclick="toggleRoster()" id="roster-toggle-btn"
+            style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; background: #F8F5F2; border: none; cursor: pointer; text-align: left;">
+            <span style="font-size: 1.1rem; font-weight: 700; color: var(--purple-primary);">
+              Empresas Registradas
+              <span id="roster-count-badge" style="font-size: 0.78rem; font-weight: 600; background: var(--purple-primary); color: white; border-radius: 20px; padding: 2px 10px; margin-left: 8px; vertical-align: middle;">${data.participants.length}</span>
+            </span>
+            <svg id="roster-chevron" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted); transition: transform 0.25s; transform: rotate(0deg);"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div id="roster-panel" style="display: none; overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+              <thead>
+                <tr style="background: #F8F5F2; font-size: 0.82rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid var(--border);">
+                  <th style="padding: 0.9rem 1rem; font-weight: 600;">Empresa</th>
+                  <th style="padding: 0.9rem 1rem; font-weight: 600;">Sector</th>
+                  <th style="padding: 0.9rem 1rem; font-weight: 600;">Colaboradores</th>
+                  <th style="padding: 0.9rem 1rem; font-weight: 600;">Estado</th>
+                </tr>
+              </thead>
+              <tbody id="dash-roster-body">
+                ${renderRosterRows(data.participants)}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     `;
@@ -1525,6 +1534,14 @@ function renderPilaresSummaryPreDesign(pilares, totalVotes) {
   }).join('');
 }
 
+function toggleRoster() {
+  const panel = document.getElementById('roster-panel');
+  const chevron = document.getElementById('roster-chevron');
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  chevron.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+
 function renderRosterRows(participants) {
   if (!participants || participants.length === 0) {
     return `<tr><td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-muted);">Esperando que se unan participantes...</td></tr>`;
@@ -1581,9 +1598,12 @@ function updateDashboardFromStream(data) {
   const rosterBody = document.getElementById('dash-roster-body');
   const pilaresSummary = document.getElementById('dash-pilares-summary');
 
-  if (partCntEl) partCntEl.innerText = data.participant_count !== undefined ? data.participant_count : (data.participants_count || 0);
+  const cnt = data.participant_count !== undefined ? data.participant_count : (data.participants_count || 0);
+  if (partCntEl) partCntEl.innerText = cnt;
   if (votesCntEl) votesCntEl.innerText = data.total_votes;
   if (rosterBody && data.participants) rosterBody.innerHTML = renderRosterRows(data.participants);
+  const rosterBadge = document.getElementById('roster-count-badge');
+  if (rosterBadge && data.participant_count !== undefined) rosterBadge.textContent = data.participant_count;
   if (pilaresSummary && data.pilares) pilaresSummary.innerHTML = renderPilaresSummaryPreDesign(data.pilares, data.total_votes);
 
   const insightsSection = document.getElementById('dash-insights-section');
