@@ -1624,9 +1624,35 @@ function updateDashboardFromStream(data) {
 
 function copySessionLink() {
   const link = `${window.location.origin}/session/${state.sessionId}`;
-  navigator.clipboard.writeText(link).then(() => {
-    alert('Enlace copiado:\n' + link);
-  });
+
+  // Modal con QR
+  const overlay = document.createElement('div');
+  overlay.id = 'qr-modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem;';
+  overlay.innerHTML = `
+    <div style="background:white;border-radius:20px;padding:2rem;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.25);">
+      <h3 style="margin:0 0 4px 0;color:#4F185A;font-size:1.2rem;">Enlace para Participantes</h3>
+      <p style="font-size:0.82rem;color:#888;margin:0 0 1.25rem 0;">Comparte este QR o copia el enlace directo</p>
+      <div style="background:#f9f9f9;border-radius:12px;padding:16px;margin-bottom:1rem;display:inline-block;">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(link)}&color=4F185A&bgcolor=FFFFFF&qzone=1"
+          alt="QR" width="180" height="180" style="display:block;border-radius:8px;" />
+      </div>
+      <div style="background:#F4F1FA;border-radius:10px;padding:10px 14px;font-size:0.78rem;color:#4F185A;word-break:break-all;margin-bottom:1.25rem;font-family:monospace;">${link}</div>
+      <div style="display:flex;gap:8px;justify-content:center;">
+        <button id="qr-copy-btn" onclick="
+          navigator.clipboard.writeText('${link}');
+          this.textContent='Copiado';
+          this.style.background='#4F185A';
+          this.style.color='white';
+          setTimeout(()=>{this.textContent='Copiar enlace';this.style.background='';this.style.color='';},2000);
+        " style="padding:8px 18px;border-radius:8px;border:2px solid #4F185A;background:white;color:#4F185A;font-weight:600;font-size:0.85rem;cursor:pointer;">Copiar enlace</button>
+        <button onclick="document.getElementById('qr-modal-overlay').remove();"
+          style="padding:8px 18px;border-radius:8px;border:none;background:#4F185A;color:white;font-weight:600;font-size:0.85rem;cursor:pointer;">Cerrar</button>
+      </div>
+    </div>
+  `;
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
 }
 
 async function closeSession() {
