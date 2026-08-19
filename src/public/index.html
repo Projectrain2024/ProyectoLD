@@ -1288,12 +1288,15 @@ async function renderInstructorDashboard() {
 
     root.innerHTML = `
       <div class="card-panel">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; flex-wrap: wrap; gap: 16px;">
-          <div>
-            <span class="live-badge"><span class="live-dot"></span> EN VIVO</span>
-            <h1 style="margin-top: 8px; font-size: 2.1rem;">Panel en Vivo: ${data.session.title}</h1>
-            <p class="subtitle" style="margin-bottom: 0;">ID: <code>${state.sessionId}</code> | Datos en tiempo real</p>
+        <div style="position: sticky; top: 0; z-index: 100; background: var(--surface); margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; padding-top: 1rem;">
+          <span class="live-badge"><span class="live-dot"></span> EN VIVO</span>
+          <div style="display: flex; align-items: center; gap: 16px; margin-top: 8px; flex-wrap: wrap;">
+            <h1 style="margin: 0; font-size: 2.1rem; flex: 1;">Panel en Vivo: ${data.session.title}</h1>
+            <svg viewBox="0 0 240 88" xmlns="http://www.w3.org/2000/svg" style="width: 230px; height: auto; flex-shrink: 0;">
+              <text x="0" y="80" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="88" fill="#4F185A" letter-spacing="-4">LHH</text>
+            </svg>
           </div>
+          <p class="subtitle" style="margin: 6px 0 1rem 0;">ID: <code>${state.sessionId}</code> | Datos en tiempo real</p>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <button class="btn-lhh btn-lhh-outline" style="font-size: 0.8rem; padding: 0.6rem 1.2rem;" onclick="navigate('/')">← Volver al Inicio</button>
             <button class="btn-lhh btn-lhh-outline" style="font-size: 0.8rem; padding: 0.6rem 1.2rem;" onclick="copySessionLink()">Enlace Participantes</button>
